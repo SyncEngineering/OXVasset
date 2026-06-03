@@ -1,0 +1,42 @@
+/* Form styles */
+.form-container {
+  background-color: white;
+  padding: 10px;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+}
+
+.form-section-title {
+  background-color: #1c5ad6;
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.form-group label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.error-text {
+  color: red;
+  font-size: 11px;
+  margin-top: 2px;
+}
