@@ -22,7 +22,7 @@ const Dashboard = () => {
   return (
     <div>
       <h2 style={{ fontSize: '16px', marginBottom: '15px', color: '#003399' }}>
-        ASSETS MODULE — Dashboard
+        ASSETS MODULE - Dashboard
       </h2>
       
       <div className="form-container">
