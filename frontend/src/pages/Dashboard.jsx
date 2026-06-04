@@ -63,6 +63,11 @@ const Dashboard = () => {
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              interaction: {
+                mode: 'index',
+                intersect: false,
+                axis: 'x'
+              },
               plugins: { legend: { display: false } },
               scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
             }
@@ -88,6 +93,11 @@ const Dashboard = () => {
               indexAxis: 'y',
               responsive: true,
               maintainAspectRatio: false,
+              interaction: {
+                mode: 'index',
+                intersect: false,
+                axis: 'y'
+              },
               scales: {
                 x: { stacked: true, beginAtZero: true },
                 y: { stacked: true }
@@ -116,6 +126,11 @@ const Dashboard = () => {
               indexAxis: 'y',
               responsive: true,
               maintainAspectRatio: false,
+              interaction: {
+                mode: 'index',
+                intersect: false,
+                axis: 'y'
+              },
               plugins: { legend: { display: false } }
             }
           });
