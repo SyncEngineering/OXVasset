@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/tasks/expiryDocEntryApi';
+import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
 import '../../styles/form.css';
@@ -50,6 +51,11 @@ const ExpiryDocEntry = () => {
       const doc = docOptions.find(d => d.id === parseInt(value));
       setSelectedDocOptions(doc);
     }
+  };
+
+  const handleFillDummy = () => {
+    const dummy = getDummyData('ExpiryDocEntry');
+    setFormData(prev => ({ ...prev, ...dummy }));
   };
 
   const handleFileChange = (e) => {
@@ -173,6 +179,7 @@ const ExpiryDocEntry = () => {
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button type="submit" className="primary">Save</button>
+              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
               <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </form>

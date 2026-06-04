@@ -11,6 +11,7 @@ import assetSubGroupRoutes from '../features/masters/assetSubGroup/assetSubGroup
 import expiryDocTypeRoutes from '../features/masters/expiryDocType/expiryDocType.routes.js';
 import odometerResetRoutes from '../features/masters/odometerReset/odometerReset.routes.js';
 import assetMasterRoutes from '../features/masters/assetMaster/assetMaster.routes.js';
+
 import assetChangeWipRoutes from '../features/tasks/assetChangeWip/assetChangeWip.routes.js';
 import depreciationEntryRoutes from '../features/tasks/depreciationEntry/depreciationEntry.routes.js';
 import assetReclassifyRoutes from '../features/tasks/assetReclassify/assetReclassify.routes.js';
@@ -19,14 +20,24 @@ import assetTransferRoutes from '../features/tasks/assetTransfer/assetTransfer.r
 import branchTransferRoutes from '../features/tasks/branchTransfer/branchTransfer.routes.js';
 import expiryDocEntryRoutes from '../features/tasks/expiryDocEntry/expiryDocEntry.routes.js';
 import companyLicenseRoutes from '../features/tasks/companyLicense/companyLicense.routes.js';
+
 import fixedAssetListRoutes from '../features/reports/fixedAssetList/fixedAssetList.routes.js';
 import assetSummaryDepreciationRoutes from '../features/reports/assetSummaryDepreciation/assetSummaryDepreciation.routes.js';
 import assetManagementRoutes from '../features/reports/assetManagement/assetManagement.routes.js';
 import fixedAssetSummaryXLRoutes from '../features/reports/fixedAssetSummaryXL/fixedAssetSummaryXL.routes.js';
 import assetTransferXLRoutes from '../features/reports/assetTransferXL/assetTransferXL.routes.js';
 import companyLicenseListRoutes from '../features/reports/companyLicenseList/companyLicenseList.routes.js';
+import assetBarcodeRoutes from '../features/reports/assetBarcode/assetBarcode.routes.js';
+import expiryDocumentListRoutes from '../features/reports/expiryDocumentList/expiryDocumentList.routes.js';
+import dashboardRoutes from '../features/dashboard/dashboard.routes.js';
 
 const router = Router();
+
+// Health check
+router.get('/health', (req, res) => res.json({ success: true, message: 'API is reachable' }));
+
+// Dashboard
+router.use('/dashboard', dashboardRoutes);
 
 // Masters
 router.use('/asset-divisions', assetDivisionRoutes);
@@ -58,7 +69,7 @@ router.use('/reports/asset-management', assetManagementRoutes);
 router.use('/reports/fixed-asset-summary-xl', fixedAssetSummaryXLRoutes);
 router.use('/reports/asset-transfer-xl', assetTransferXLRoutes);
 router.use('/reports/company-license-list', companyLicenseListRoutes);
-
-// Import and mount feature routes here as they are built
+router.use('/reports/asset-barcode', assetBarcodeRoutes);
+router.use('/reports/expiry-document-list', expiryDocumentListRoutes);
 
 export default router;

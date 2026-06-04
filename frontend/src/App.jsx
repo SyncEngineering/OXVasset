@@ -33,16 +33,10 @@ import AssetManagement from './pages/reports/AssetManagement.jsx';
 import FixedAssetSummaryXL from './pages/reports/FixedAssetSummaryXL.jsx';
 import AssetTransferXL from './pages/reports/AssetTransferXL.jsx';
 import CompanyLicenseList from './pages/reports/CompanyLicenseList.jsx';
+import AssetBarcode from './pages/reports/AssetBarcode.jsx';
+import ExpiryDocumentList from './pages/reports/ExpiryDocumentList.jsx';
 
 import './styles/global.css';
-
-// Placeholder for yet-to-be-built pages
-const Placeholder = ({ title }) => (
-  <div className="form-container">
-    <div className="form-section-title">{title}</div>
-    <p style={{ padding: '10px' }}>This page is currently under development.</p>
-  </div>
-);
 
 /**
  * Main App component with routing configuration.
@@ -84,8 +78,8 @@ const App = () => {
           <Route path="/reports/asset-xl" element={<FixedAssetSummaryXL />} />
           <Route path="/reports/transfer-xl" element={<AssetTransferXL />} />
           <Route path="/reports/license-list" element={<CompanyLicenseList />} />
-          <Route path="/reports/barcode" element={<Placeholder title="Asset Barcode" />} />
-          <Route path="/reports/expiry-doc-list" element={<Placeholder title="Expiry Document List" />} />
+          <Route path="/reports/barcode" element={<AssetBarcode />} />
+          <Route path="/reports/expiry-doc-list" element={<ExpiryDocumentList />} />
         </Routes>
       </Layout>
     </BrowserRouter>

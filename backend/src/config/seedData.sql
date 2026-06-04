@@ -73,3 +73,24 @@ INSERT IGNORE INTO tbl_expiry_document_entry (entry_no, asset_id, doc_type_id, d
 -- 14. Company License
 INSERT IGNORE INTO tbl_company_license_documents (entry_no, doc_type_id, document_name, expiry_date, created_by) VALUES
 ('LIC/00001', 1, 'Trade License', '2026-01-01', 'ADMIN');
+
+-- 15. Depreciation Entry
+INSERT IGNORE INTO tbl_depreciation_entry (entry_no, entry_date, period_from, period_to, asset_id, opening_book_value, depreciation_amount, closing_book_value, depreciation_method, status, created_by) VALUES
+('DEP/00001', '2024-05-31', '2024-05-01', '2024-05-31', 1, 4500.00, 125.00, 4375.00, 'straight_line', 'posted', 'ADMIN'),
+('DEP/00002', '2024-05-31', '2024-05-01', '2024-05-31', 2, 250000.00, 2604.17, 247395.83, 'straight_line', 'posted', 'ADMIN');
+
+-- 16. Asset Reclassify
+INSERT IGNORE INTO tbl_asset_reclassify (reclassify_no, reclassify_date, asset_id, old_category_id, new_category_id, reason, status, created_by) VALUES
+('RCL/00001', '2024-06-01', 1, 1, 1, 'Correcting classification for sub-group', 'approved', 'ADMIN');
+
+-- 17. Asset Sale/Disposal
+INSERT IGNORE INTO tbl_asset_sale_disposal (disposal_no, disposal_date, asset_id, disposal_type, book_value_at_disposal, sale_amount, status, created_by) VALUES
+('DIS/00001', '2024-06-10', 3, 'scrap', 1200.00, 100.00, 'draft', 'ADMIN');
+
+-- 18. Asset Transfer (Division)
+INSERT IGNORE INTO tbl_asset_transfer (transfer_no, transfer_date, asset_id, from_division_id, to_division_id, reason, status, created_by) VALUES
+('TRF/00001', '2024-06-05', 1, 1, 3, 'Project completion transfer', 'approved', 'ADMIN');
+
+-- 19. Asset Branch Transfer
+INSERT IGNORE INTO tbl_asset_branch_transfer (branch_transfer_no, transfer_date, asset_id, from_branch, to_branch, reason, status, created_by) VALUES
+('BTR/00001', '2024-06-08', 2, 'Main Branch', 'Industrial Area Branch', 'Site requirement', 'pending', 'ADMIN');
