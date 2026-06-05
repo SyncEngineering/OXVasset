@@ -15,14 +15,15 @@ const AssetTransfer = () => {
   
   const [formData, setFormData] = useState({
     asset_id: '', transfer_date: new Date().toISOString().split('T')[0], reason: '',
-    from_division_id: '', to_division_id: '',
-    from_location_id: '', to_location_id: ''
+    from_division_code: '', to_division_code: '',
+    from_location_code: '', to_location_code: ''
   });
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const [fromLabels, setFromLabels] = useState({ division: '', location: '' });
 
@@ -49,20 +50,26 @@ const AssetTransfer = () => {
 
   const handleAssetSelect = (e) => {
     const assetId = e.target.value;
+    const { name } = e.target;
     const asset = assetOptions.find(a => a.id === parseInt(assetId));
+    
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
     if (asset) {
       setFormData(prev => ({
         ...prev,
         asset_id: assetId,
-        from_division_id: asset.division_id,
-        from_location_id: asset.location_id
+        from_division_code: asset.division_code,
+        from_location_code: asset.location_code
       }));
       setFromLabels({
         division: asset.division_name || 'N/A',
         location: asset.location_name || 'N/A'
       });
     } else {
-      setFormData(prev => ({ ...prev, asset_id: '', from_division_id: '', from_location_id: '' }));
+      setFormData(prev => ({ ...prev, asset_id: '', from_division_code: '', from_location_code: '' }));
       setFromLabels({ division: '', location: '' });
     }
   };
@@ -70,16 +77,22 @@ const AssetTransfer = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('AssetTransfer');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (parseInt(formData.to_division_id) === parseInt(formData.from_division_id)) {
+    setError('');
+    setFieldErrors({});
+    if (parseInt(formData.to_division_code) === parseInt(formData.from_division_code)) {
       setError('Target division must be different from source division');
       return;
     }
@@ -90,7 +103,15 @@ const AssetTransfer = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Save failed');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -117,17 +138,19 @@ const AssetTransfer = () => {
 
     setFormData(clean);
     setEditId(row.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
   const resetForm = () => {
     setFormData({
       asset_id: '', transfer_date: new Date().toISOString().split('T')[0], reason: '',
-      from_division_id: '', to_division_id: '',
-      from_location_id: '', to_location_id: ''
+      from_division_code: '', to_division_code: '',
+      from_location_code: '', to_location_code: ''
     });
     setFromLabels({ division: '', location: '' });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
@@ -181,9 +204,9 @@ const AssetTransfer = () => {
           <div className="form-section-title">Transfer Details</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} />
-              <FormField label="Date" name="transfer_date" type="date" value={formData.transfer_date} onChange={handleInputChange} required />
-              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} />
+              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
+              <FormField label="Date" name="transfer_date" type="date" value={formData.transfer_date} onChange={handleInputChange} required error={fieldErrors.transfer_date} />
+              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} error={fieldErrors.reason} />
             </div>
 
             <div className="form-row">
@@ -194,8 +217,8 @@ const AssetTransfer = () => {
               </div>
               <div style={{ flex: 1, padding: '10px' }}>
                 <p><strong>To (Target)</strong></p>
-                <FormField label="To Division" name="to_division_id" type="select" options={divisionOptions} value={formData.to_division_id} onChange={handleInputChange} required />
-                <FormField label="To Location" name="to_location_id" type="select" options={locationOptions} value={formData.to_location_id} onChange={handleInputChange} />
+                <FormField label="To Division" name="to_division_code" type="select" options={divisionOptions} value={formData.to_division_code} onChange={handleInputChange} required error={fieldErrors.to_division_code} />
+                <FormField label="To Location" name="to_location_code" type="select" options={locationOptions} value={formData.to_location_code} onChange={handleInputChange} error={fieldErrors.to_location_code} />
               </div>
             </div>
 

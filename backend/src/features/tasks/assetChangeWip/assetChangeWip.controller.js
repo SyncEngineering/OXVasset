@@ -8,7 +8,7 @@ export const getAll = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT w.*, a.asset_code, a.asset_name
       FROM tbl_asset_change_wip w
-      JOIN tbl_asset_master a ON w.asset_id = a.id
+      JOIN tbl_asset_master a ON w.asset_id = a.asset_id
       ORDER BY w.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -22,7 +22,7 @@ export const getById = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT w.*, a.asset_code, a.asset_name
       FROM tbl_asset_change_wip w
-      JOIN tbl_asset_master a ON w.asset_id = a.id
+      JOIN tbl_asset_master a ON w.asset_id = a.asset_id
       WHERE w.id = ?
     `, [req.params.id]);
     
@@ -35,7 +35,7 @@ export const getById = async (req, res, next) => {
 
 export const getAssetOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, asset_code, asset_name FROM tbl_asset_master WHERE is_active = 1 ORDER BY asset_code');
+    const [rows] = await pool.query('SELECT asset_id AS id, asset_code, asset_name FROM tbl_asset_master WHERE is_active = 1 ORDER BY asset_code');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);

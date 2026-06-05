@@ -20,6 +20,7 @@ const AssetChangeWip = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -44,15 +45,21 @@ const AssetChangeWip = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('AssetChangeWip');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     try {
       if (editId) {
         await api.update(editId, formData);
@@ -63,7 +70,15 @@ const AssetChangeWip = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Failed to save entry');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -77,6 +92,7 @@ const AssetChangeWip = () => {
     
     setFormData(cleanRecord);
     setEditId(record.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
@@ -96,6 +112,7 @@ const AssetChangeWip = () => {
       old_value: '', new_value: '', cost_incurred: 0, remarks: ''
     });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
@@ -165,17 +182,17 @@ const AssetChangeWip = () => {
             <div className="form-row">
               <FormField label="Asset" name="asset_id" type="select" 
                 options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} — ${a.asset_name}` }))} 
-                value={formData.asset_id} onChange={handleInputChange} required />
-              <FormField label="Change Date" name="change_date" type="date" value={formData.change_date} onChange={handleInputChange} required />
-              <FormField label="Change Type" name="change_type" value={formData.change_type} onChange={handleInputChange} required placeholder="Upgrade, Repair, etc." />
+                value={formData.asset_id} onChange={handleInputChange} required error={fieldErrors.asset_id} />
+              <FormField label="Change Date" name="change_date" type="date" value={formData.change_date} onChange={handleInputChange} required error={fieldErrors.change_date} />
+              <FormField label="Change Type" name="change_type" value={formData.change_type} onChange={handleInputChange} required placeholder="Upgrade, Repair, etc." error={fieldErrors.change_type} />
             </div>
             <div className="form-row">
-              <FormField label="Old Value" name="old_value" value={formData.old_value} onChange={handleInputChange} />
-              <FormField label="New Value" name="new_value" value={formData.new_value} onChange={handleInputChange} />
-              <FormField label="Cost Incurred" name="cost_incurred" type="number" value={formData.cost_incurred} onChange={handleInputChange} />
+              <FormField label="Old Value" name="old_value" value={formData.old_value} onChange={handleInputChange} error={fieldErrors.old_value} />
+              <FormField label="New Value" name="new_value" value={formData.new_value} onChange={handleInputChange} error={fieldErrors.new_value} />
+              <FormField label="Cost Incurred" name="cost_incurred" type="number" value={formData.cost_incurred} onChange={handleInputChange} error={fieldErrors.cost_incurred} />
             </div>
             <div className="form-row">
-              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} />
+              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} error={fieldErrors.remarks} />
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
               <button type="submit" className="primary">Save Entry</button>

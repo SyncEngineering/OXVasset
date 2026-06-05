@@ -5,7 +5,7 @@ import pool from '../../../config/db.js';
  */
 export const getAll = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM tbl_location_area_master ORDER BY id DESC');
+    const [rows] = await pool.query('SELECT * FROM tbl_location_area_master ORDER BY location_code DESC');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -14,7 +14,7 @@ export const getAll = async (req, res, next) => {
 
 export const getById = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM tbl_location_area_master WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT * FROM tbl_location_area_master WHERE location_code = ?', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, data: rows[0] });
   } catch (error) {
@@ -24,10 +24,10 @@ export const getById = async (req, res, next) => {
 
 export const create = async (req, res, next) => {
   try {
-    const { location_code, location_name, address, city, state, country } = req.body;
+    const { location_name, address, city, state, country } = req.body;
     const [result] = await pool.query(
-      'INSERT INTO tbl_location_area_master (location_code, location_name, address, city, state, country, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [location_code, location_name, address, city, state, country, 'ADMIN']
+      'INSERT INTO tbl_location_area_master (location_name, address, city, state, country, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+      [location_name, address, city, state, country, 'ADMIN']
     );
     res.status(201).json({ success: true, message: 'Created successfully', id: result.insertId });
   } catch (error) {
@@ -37,10 +37,10 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const { location_code, location_name, address, city, state, country, is_active } = req.body;
+    const { location_name, address, city, state, country, is_active } = req.body;
     const [result] = await pool.query(
-      'UPDATE tbl_location_area_master SET location_code = ?, location_name = ?, address = ?, city = ?, state = ?, country = ?, is_active = ?, updated_by = ? WHERE id = ?',
-      [location_code, location_name, address, city, state, country, is_active, 'ADMIN', req.params.id]
+      'UPDATE tbl_location_area_master SET location_name = ?, address = ?, city = ?, state = ?, country = ?, is_active = ?, updated_by = ? WHERE location_code = ?',
+      [location_name, address, city, state, country, is_active, 'ADMIN', req.params.id]
     );
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Not found' });
     res.json({ success: true, message: 'Updated successfully' });
@@ -51,13 +51,23 @@ export const update = async (req, res, next) => {
 
 export const toggleActive = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT is_active FROM tbl_location_area_master WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT is_active FROM tbl_location_area_master WHERE location_code = ?', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
     
     const newStatus = rows[0].is_active ? 0 : 1;
-    await pool.query('UPDATE tbl_location_area_master SET is_active = ?, updated_by = ? WHERE id = ?', [newStatus, 'ADMIN', req.params.id]);
+    await pool.query('UPDATE tbl_location_area_master SET is_active = ?, updated_by = ? WHERE location_code = ?', [newStatus, 'ADMIN', req.params.id]);
     
     res.json({ success: true, message: 'Status updated' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const remove = async (req, res, next) => {
+  try {
+    const [result] = await pool.query('DELETE FROM tbl_location_area_master WHERE location_code = ?', [req.params.id]);
+    if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Not found' });
+    res.json({ success: true, message: 'Deleted successfully' });
   } catch (error) {
     next(error);
   }

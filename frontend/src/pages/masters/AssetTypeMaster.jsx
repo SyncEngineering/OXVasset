@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/masters/assetTypeApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
+import Modal from '../../components/common/Modal.jsx';
 import Table from '../../components/common/Table.jsx';
-import StatusBadge from '../../components/common/StatusBadge.jsx';
 import '../../styles/form.css';
 import '../../styles/table.css';
 
 const AssetTypeMaster = () => {
-  const [records, setRecords] = useState([]);
-  const [formData, setFormData] = useState({ type_code: '', type_name: '', description: '', is_active: 1 });
-  const [editId, setEditId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const initialFormState = {
+    type_code: '',
+    type_prefix: '',
+    type_name: '',
+    fuel_distance: 0,
+    jobcard_control_type: 'Workshop(Movable)',
+    doc_expiry_visible_yn: 1,
+    trailer_trip_calc_base_weight: 0,
+    trip_applicable_yn: 0,
+    asset_single_unit_yn: 1,
+    description: '',
+    is_active: 1
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [records, setRecords] = useState([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchRecords = async () => {
-    setLoading(true);
     try {
       const res = await api.getAll();
       if (res.success) setRecords(res.data);
     } catch (err) {
-      setError('Failed to fetch records');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch records');
     }
   };
 
@@ -33,138 +42,219 @@ const AssetTypeMaster = () => {
   }, []);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target;
+    let finalValue = value;
+    
+    if (type === 'radio') {
+      finalValue = parseInt(value, 10);
+    } else if (name === 'fuel_distance' || name === 'trailer_trip_calc_base_weight') {
+      finalValue = value === '' ? '' : parseFloat(value);
+    }
+
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleFillDummy = () => {
-    const dummy = getDummyData('AssetType');
-    setFormData(prev => ({ ...prev, ...dummy }));
+  const handleClear = () => {
+    setFormData(initialFormState);
+    setFieldErrors({});
+    setError('');
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async (isUpdate = false) => {
+    setError('');
+    setFieldErrors({});
+    setLoading(true);
     try {
-      if (editId) {
-        await api.update(editId, formData);
+      if (isUpdate) {
+        await api.update(formData.type_code, formData);
       } else {
-        await api.create(formData);
+        const res = await api.create(formData);
+        if (res.success) {
+           setFormData(prev => ({...prev, type_code: res.id}));
+        }
       }
-      setShowForm(false);
-      setFormData({ type_code: '', type_name: '', description: '', is_active: 1 });
-      setEditId(null);
       fetchRecords();
+      alert(isUpdate ? 'Updated successfully' : 'Saved successfully');
     } catch (err) {
-      setError('Failed to save record');
+      if (err.response?.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => { errors[e.path] = e.msg; });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Operation failed');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (record) => {
-    setFormData({
-      type_code: record.type_code,
-      type_name: record.type_name,
-      description: record.description || '',
-      is_active: record.is_active
-    });
-    setEditId(record.id);
-    setShowForm(true);
-  };
+  const handleDelete = async () => {
+    if (!formData.type_code) return;
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
 
-  const handleToggleActive = async (id) => {
     try {
-      await api.toggleActive(id);
+      await api.remove(formData.type_code);
+      handleClear();
       fetchRecords();
+      alert('Deleted successfully');
     } catch (err) {
-      setError('Failed to update status');
+      setError(err.response?.data?.message || 'Delete failed');
     }
   };
 
-  const filteredRecords = records.filter(r => 
-    r.type_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.type_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSelectRecord = (record) => {
+    setFormData({
+      ...record,
+      description: record.description || ''
+    });
+    setShowSearchModal(false);
+  };
 
-  const columns = [
-    { key: 'type_code', label: 'Code', width: '150px' },
-    { key: 'type_name', label: 'Name', width: '250px' },
-    { key: 'description', label: 'Description', width: '300px' },
-    { key: 'status_display', label: 'Status', width: '100px' }
-  ];
-
-  const tableData = filteredRecords.map(r => ({
-    ...r,
-    status_display: <StatusBadge status={r.is_active ? 'active' : 'inactive'} />
-  }));
-
-  const actions = [
-    { label: 'Edit', onClick: handleEdit },
-    { label: 'Toggle Active', onClick: (r) => handleToggleActive(r.id) }
+  const searchColumns = [
+    { key: 'type_code', label: 'Code', width: '80px' },
+    { key: 'type_name', label: 'Name', width: '200px' },
+    { key: 'trailer_trip_calc_base_weight', label: 'Base Weight', width: '120px' },
+    { key: 'trip_applicable_yn', label: 'Trip Applicable', width: '120px', render: (val) => val ? 'YES' : 'NO' }
   ];
 
   return (
-    <div>
-      <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Type Master</div>
+    <div className="asset-type-master">
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
+        <span style={{ fontWeight: 'bold' }}>Asset Type Master</span>
       </div>
 
-      <div className="form-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="Search code or name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button className="secondary" onClick={() => setSearchTerm('')}>Clear</button>
+      <div className="form-container" style={{ marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', width: '120px' }}>Search</label>
+          <button className="secondary" onClick={() => setShowSearchModal(true)} style={{ padding: '2px 5px' }}>
+            🔍
+          </button>
         </div>
-        <button className="primary" onClick={() => { setShowForm(true); setEditId(null); setFormData({ type_code: '', type_name: '', description: '', is_active: 1 }); }}>
-          Add New
-        </button>
-      </div>
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-section-title">{editId ? `Edit — ${formData.type_code}` : 'Add New Type'}</div>
-          <form onSubmit={handleSave}>
-            <div className="form-row">
-              <FormField 
-                label="Type Code" 
-                name="type_code" 
-                value={formData.type_code} 
-                onChange={handleInputChange} 
-                required 
-              />
-              <FormField 
-                label="Type Name" 
-                name="type_name" 
-                value={formData.type_name} 
-                onChange={handleInputChange} 
-                required 
-              />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Asset Type code</label>
+            <input type="text" value={formData.type_code} readOnly style={{ width: '150px', backgroundColor: '#f0f0f0' }} />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Asset Type Prefix</label>
+            <input 
+              type="text" 
+              name="type_prefix" 
+              value={formData.type_prefix} 
+              onChange={handleInputChange} 
+              maxLength={3} 
+              style={{ width: '150px' }} 
+            />
+            <span style={{ fontSize: '11px', color: '#666' }}>(Should be Three Letters)</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Asset Type Name</label>
+            <input 
+              type="text" 
+              name="type_name" 
+              value={formData.type_name} 
+              onChange={handleInputChange} 
+              style={{ width: '400px' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Fuel Distance</label>
+            <input 
+              type="number" 
+              name="fuel_distance" 
+              value={formData.fuel_distance} 
+              onChange={handleInputChange} 
+              style={{ width: '150px' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Jobcard Control Type</label>
+            <select 
+              name="jobcard_control_type" 
+              value={formData.jobcard_control_type} 
+              onChange={handleInputChange} 
+              style={{ width: '200px' }}
+            >
+              <option value="Workshop(Movable)">Workshop(Movable)</option>
+              <option value="Fixed">Fixed</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Document Expiry Visible[Yes/No]</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="doc_expiry_visible_yn" value={1} checked={formData.doc_expiry_visible_yn === 1} onChange={handleInputChange} /> Yes
+              </label>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="doc_expiry_visible_yn" value={0} checked={formData.doc_expiry_visible_yn === 0} onChange={handleInputChange} /> No
+              </label>
             </div>
-            <div className="form-row">
-              <FormField 
-                label="Description" 
-                name="description" 
-                type="textarea" 
-                value={formData.description} 
-                onChange={handleInputChange} 
-              />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Trailer Trip Calc. Base Weight</label>
+            <input 
+              type="number" 
+              name="trailer_trip_calc_base_weight" 
+              value={formData.trailer_trip_calc_base_weight} 
+              onChange={handleInputChange} 
+              style={{ width: '150px' }} 
+            />
+            <label style={{ fontSize: '12px', marginLeft: '20px' }}>Trip Applicable YN</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="trip_applicable_yn" value={1} checked={formData.trip_applicable_yn === 1} onChange={handleInputChange} /> Yes
+              </label>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="trip_applicable_yn" value={0} checked={formData.trip_applicable_yn === 0} onChange={handleInputChange} /> No
+              </label>
             </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button type="submit" className="primary">Save</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
-              <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Asset Single Unit YN</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="asset_single_unit_yn" value={1} checked={formData.asset_single_unit_yn === 1} onChange={handleInputChange} /> Yes
+              </label>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="asset_single_unit_yn" value={0} checked={formData.asset_single_unit_yn === 0} onChange={handleInputChange} /> No
+              </label>
             </div>
-          </form>
+          </div>
         </div>
-      )}
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button className="secondary" onClick={handleClear} style={{ backgroundColor: '#008cba', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Clear</button>
+          <button className="primary" onClick={() => handleSave(false)} disabled={formData.type_code !== ''} style={{ backgroundColor: '#003399', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Save 💾</button>
+          <button className="primary" onClick={() => handleSave(true)} disabled={formData.type_code === ''} style={{ backgroundColor: '#4caf50', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Update ⤴️</button>
+          <button className="danger" onClick={handleDelete} disabled={formData.type_code === ''} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Delete 🗑️</button>
+        </div>
 
-      <div className="form-container">
-        <Table columns={columns} data={tableData} actions={actions} />
+        {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '12px' }}>{error}</div>}
       </div>
+
+      <Modal 
+        title="VEHICLE TYPE SEARCH - Google Chrome" 
+        isOpen={showSearchModal} 
+        onClose={() => setShowSearchModal(false)}
+        width="800px"
+      >
+        <Table 
+          columns={searchColumns} 
+          data={records} 
+          onRowClick={handleSelectRecord}
+        />
+      </Modal>
     </div>
   );
 };

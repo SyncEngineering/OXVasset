@@ -1,28 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/masters/odometerResetApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
+import Modal from '../../components/common/Modal.jsx';
 import Table from '../../components/common/Table.jsx';
 import '../../styles/form.css';
 import '../../styles/table.css';
 
 const OdometerResetMaster = () => {
-  const [records, setRecords] = useState([]);
+  const initialFormState = {
+    id: '',
+    asset_id: '',
+    reset_date: new Date().toISOString().split('T')[0],
+    previous_reading: 0,
+    new_reading: 0,
+    reason: ''
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
   const [assetOptions, setAssetOptions] = useState([]);
-  const [formData, setFormData] = useState({ 
-    asset_id: '', 
-    reset_date: new Date().toISOString().split('T')[0], 
-    previous_reading: 0, 
-    new_reading: 0, 
-    reason: '' 
-  });
-  const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [records, setRecords] = useState([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const [resRecords, resAssets] = await Promise.all([
         api.getAll(),
@@ -31,9 +33,7 @@ const OdometerResetMaster = () => {
       if (resRecords.success) setRecords(resRecords.data);
       if (resAssets.success) setAssetOptions(resAssets.data);
     } catch (err) {
-      setError('Failed to fetch data');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch data');
     }
   };
 
@@ -44,140 +44,170 @@ const OdometerResetMaster = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleFillDummy = () => {
-    const dummy = getDummyData('OdometerReset');
-    setFormData(prev => ({ ...prev, ...dummy }));
+  const handleClear = () => {
+    setFormData(initialFormState);
+    setFieldErrors({});
+    setError('');
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async () => {
+    setError('');
+    setFieldErrors({});
     if (formData.new_reading < 0) {
-      setError('New reading cannot be negative');
+      setFieldErrors({ new_reading: 'New reading cannot be negative' });
       return;
     }
+    setLoading(true);
     try {
-      await api.create(formData);
-      setShowForm(false);
-      setFormData({ 
-        asset_id: '', 
-        reset_date: new Date().toISOString().split('T')[0], 
-        previous_reading: 0, 
-        new_reading: 0, 
-        reason: '' 
-      });
+      // Odometer reset is usually an 'insert-only' history log, 
+      // but we'll support 'id' for display/delete.
+      const res = await api.create(formData);
+      if (res.success) {
+        setFormData(prev => ({ ...prev, id: res.id }));
+      }
       fetchData();
+      alert('Reset recorded successfully');
     } catch (err) {
-      setError(err.message || 'Failed to save record');
+      if (err.response?.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => { errors[e.path] = e.msg; });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Operation failed');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredRecords = records.filter(r => 
-    r.asset_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.asset_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDelete = async () => {
+    if (!formData.id) return;
+    if (!window.confirm('Are you sure you want to delete this reset record?')) return;
 
-  const columns = [
-    { key: 'asset_code', label: 'Asset Code', width: '120px' },
+    try {
+      await api.remove(formData.id);
+      handleClear();
+      fetchData();
+      alert('Deleted successfully');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Delete failed');
+    }
+  };
+
+  const handleSelectRecord = (record) => {
+    setFormData({
+      ...record,
+      reset_date: record.reset_date.split('T')[0],
+      reason: record.reason || ''
+    });
+    setShowSearchModal(false);
+  };
+
+  const searchColumns = [
+    { key: 'asset_code', label: 'Asset Code', width: '100px' },
     { key: 'asset_name', label: 'Asset Name', width: '200px' },
-    { key: 'reset_date_display', label: 'Reset Date', width: '120px' },
-    { key: 'previous_reading', label: 'Prev Reading', width: '120px' },
-    { key: 'new_reading', label: 'New Reading', width: '120px' },
-    { key: 'reason', label: 'Reason', width: '250px' },
-    { key: 'created_by', label: 'By', width: '100px' }
+    { key: 'reset_date', label: 'Reset Date', width: '120px', render: (val) => new Date(val).toLocaleDateString() },
+    { key: 'new_reading', label: 'New Reading', width: '100px' }
   ];
 
-  const tableData = filteredRecords.map(r => ({
-    ...r,
-    reset_date_display: new Date(r.reset_date).toLocaleDateString()
-  }));
-
   return (
-    <div>
-      <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Vehicle Odometer Reset</div>
+    <div className="odometer-reset-master">
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
+        <span style={{ fontWeight: 'bold' }}>Vehicle Odometer Reset</span>
       </div>
 
-      <div className="form-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="Search asset..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+      <div className="form-container" style={{ marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', width: '120px' }}>Search</label>
+          <button className="secondary" onClick={() => setShowSearchModal(true)} style={{ padding: '2px 5px' }}>
+            🔍
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Reset ID</label>
+            <input type="text" value={formData.id} readOnly style={{ width: '150px', backgroundColor: '#f0f0f0' }} />
+          </div>
+
+          <FormField 
+            label="Select Asset" 
+            name="asset_id" 
+            type="select"
+            options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} — ${a.asset_name}` }))}
+            value={formData.asset_id} 
+            onChange={handleInputChange} 
+            error={fieldErrors.asset_id}
+            required 
           />
-          <button className="secondary" onClick={() => setSearchTerm('')}>Clear</button>
+
+          <FormField 
+            label="Reset Date" 
+            name="reset_date" 
+            type="date"
+            value={formData.reset_date} 
+            onChange={handleInputChange} 
+            error={fieldErrors.reset_date}
+            required 
+          />
+
+          <div style={{ display: 'flex', gap: '20px' }}>
+            <FormField 
+              label="Previous Reading" 
+              name="previous_reading" 
+              type="number"
+              value={formData.previous_reading} 
+              onChange={handleInputChange} 
+              error={fieldErrors.previous_reading}
+              required 
+            />
+            <FormField 
+              label="New Reading" 
+              name="new_reading" 
+              type="number"
+              value={formData.new_reading} 
+              onChange={handleInputChange} 
+              error={fieldErrors.new_reading}
+              required 
+            />
+          </div>
+
+          <FormField 
+            label="Reason" 
+            name="reason" 
+            type="textarea" 
+            value={formData.reason} 
+            onChange={handleInputChange} 
+            error={fieldErrors.reason}
+          />
         </div>
-        <button className="primary" onClick={() => setShowForm(true)}>
-          Add New Reset
-        </button>
+
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button className="secondary" onClick={handleClear} style={{ backgroundColor: '#008cba', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Clear</button>
+          <button className="primary" onClick={handleSave} disabled={formData.id !== ''} style={{ backgroundColor: '#003399', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Save 💾</button>
+          <button className="danger" onClick={handleDelete} disabled={formData.id === ''} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Delete 🗑️</button>
+        </div>
+
+        {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '12px' }}>{error}</div>}
       </div>
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-section-title">Record Odometer Reset</div>
-          <form onSubmit={handleSave}>
-            <div className="form-row">
-              <FormField 
-                label="Select Asset" 
-                name="asset_id" 
-                type="select"
-                options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} — ${a.asset_name}` }))}
-                value={formData.asset_id} 
-                onChange={handleInputChange} 
-                required 
-              />
-              <FormField 
-                label="Reset Date" 
-                name="reset_date" 
-                type="date"
-                value={formData.reset_date} 
-                onChange={handleInputChange} 
-                required 
-              />
-            </div>
-            <div className="form-row">
-              <FormField 
-                label="Previous Reading" 
-                name="previous_reading" 
-                type="number"
-                value={formData.previous_reading} 
-                onChange={handleInputChange} 
-                required 
-              />
-              <FormField 
-                label="New Reading" 
-                name="new_reading" 
-                type="number"
-                value={formData.new_reading} 
-                onChange={handleInputChange} 
-                required 
-              />
-            </div>
-            <div className="form-row">
-              <FormField 
-                label="Reason" 
-                name="reason" 
-                type="textarea" 
-                value={formData.reason} 
-                onChange={handleInputChange} 
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button type="submit" className="primary">Save</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
-              <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-
-      <div className="form-container">
-        <Table columns={columns} data={tableData} />
-      </div>
+      <Modal 
+        title="ODOMETER RESET SEARCH" 
+        isOpen={showSearchModal} 
+        onClose={() => setShowSearchModal(false)}
+        width="800px"
+      >
+        <Table 
+          columns={searchColumns} 
+          data={records} 
+          onRowClick={handleSelectRecord}
+        />
+      </Modal>
     </div>
   );
 };

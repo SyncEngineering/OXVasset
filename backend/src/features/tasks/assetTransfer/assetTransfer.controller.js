@@ -14,11 +14,11 @@ export const getAll = async (req, res, next) => {
         fl.location_name AS from_location_name,
         tl.location_name AS to_location_name
       FROM tbl_asset_transfer t
-      JOIN tbl_asset_master a ON t.asset_id = a.id
-      LEFT JOIN tbl_asset_division_master fd ON t.from_division_id = fd.id
-      LEFT JOIN tbl_asset_division_master td ON t.to_division_id = td.id
-      LEFT JOIN tbl_location_area_master fl ON t.from_location_id = fl.id
-      LEFT JOIN tbl_location_area_master tl ON t.to_location_id = tl.id
+      JOIN tbl_asset_master a ON t.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_division_master fd ON t.from_division_code = fd.division_code
+      LEFT JOIN tbl_asset_division_master td ON t.to_division_code = td.division_code
+      LEFT JOIN tbl_location_area_master fl ON t.from_location_code = fl.location_code
+      LEFT JOIN tbl_location_area_master tl ON t.to_location_code = tl.location_code
       ORDER BY t.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -37,11 +37,11 @@ export const getById = async (req, res, next) => {
         fl.location_name AS from_location_name,
         tl.location_name AS to_location_name
       FROM tbl_asset_transfer t
-      JOIN tbl_asset_master a ON t.asset_id = a.id
-      LEFT JOIN tbl_asset_division_master fd ON t.from_division_id = fd.id
-      LEFT JOIN tbl_asset_division_master td ON t.to_division_id = td.id
-      LEFT JOIN tbl_location_area_master fl ON t.from_location_id = fl.id
-      LEFT JOIN tbl_location_area_master tl ON t.to_location_id = tl.id
+      JOIN tbl_asset_master a ON t.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_division_master fd ON t.from_division_code = fd.division_code
+      LEFT JOIN tbl_asset_division_master td ON t.to_division_code = td.division_code
+      LEFT JOIN tbl_location_area_master fl ON t.from_location_code = fl.location_code
+      LEFT JOIN tbl_location_area_master tl ON t.to_location_code = tl.location_code
       WHERE t.id = ?
     `, [req.params.id]);
     
@@ -55,10 +55,10 @@ export const getById = async (req, res, next) => {
 export const getAssetOptions = async (req, res, next) => {
   try {
     const [rows] = await pool.query(`
-      SELECT id, asset_code, asset_name, division_id, location_id,
-        (SELECT division_name FROM tbl_asset_division_master WHERE id = division_id) as division_name,
-        (SELECT location_name FROM tbl_location_area_master WHERE id = location_id) as location_name
-      FROM tbl_asset_master 
+      SELECT asset_id AS id, asset_code, asset_name, division_code, location_code,
+        (SELECT division_name FROM tbl_asset_division_master WHERE division_code = a.division_code) as division_name,
+        (SELECT location_name FROM tbl_location_area_master WHERE location_code = a.location_code) as location_name
+      FROM tbl_asset_master a
       WHERE is_active = 1 AND asset_status = 'active'
       ORDER BY asset_code
     `);
@@ -70,7 +70,7 @@ export const getAssetOptions = async (req, res, next) => {
 
 export const getDivisionOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, division_name AS name FROM tbl_asset_division_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT division_code AS id, division_name AS name FROM tbl_asset_division_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -79,7 +79,7 @@ export const getDivisionOptions = async (req, res, next) => {
 
 export const getLocationOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, location_name AS name FROM tbl_location_area_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT location_code AS id, location_name AS name FROM tbl_location_area_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -143,8 +143,8 @@ export const approve = async (req, res, next) => {
       );
       
       await connection.query(
-        'UPDATE tbl_asset_master SET division_id = ?, location_id = ?, asset_status = "transferred", updated_by = "ADMIN" WHERE id = ?',
-        [entry.to_division_id, entry.to_location_id, entry.asset_id]
+        'UPDATE tbl_asset_master SET division_code = ?, location_code = ?, asset_status = "transferred", updated_by = "ADMIN" WHERE asset_id = ?',
+        [entry.to_division_code, entry.to_location_code, entry.asset_id]
       );
     } else {
       await connection.query(

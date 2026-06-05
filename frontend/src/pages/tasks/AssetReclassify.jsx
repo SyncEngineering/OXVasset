@@ -16,8 +16,8 @@ const AssetReclassify = () => {
   
   const [formData, setFormData] = useState({
     asset_id: '', reclassify_date: new Date().toISOString().split('T')[0], reason: '',
-    old_category_id: '', old_group_id: '', old_sub_group_id: '',
-    new_category_id: '', new_group_id: '', new_sub_group_id: ''
+    old_category_code: '', old_group_code: '', old_sub_group_code: '',
+    new_category_code: '', new_group_code: '', new_sub_group_code: ''
   });
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -25,6 +25,7 @@ const AssetReclassify = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // UI labels for old classification
   const [oldLabels, setOldLabels] = useState({ category: '', group: '', subGroup: '' });
@@ -57,14 +58,20 @@ const AssetReclassify = () => {
 
   const handleAssetSelect = (e) => {
     const assetId = e.target.value;
+    const { name } = e.target;
     const asset = assetOptions.find(a => a.id === parseInt(assetId));
+    
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
     if (asset) {
       setFormData(prev => ({
         ...prev,
         asset_id: assetId,
-        old_category_id: asset.category_id,
-        old_group_id: asset.group_id,
-        old_sub_group_id: asset.sub_group_id
+        old_category_code: asset.category_code,
+        old_group_code: asset.group_code,
+        old_sub_group_code: asset.sub_group_code
       }));
       setOldLabels({
         category: asset.category_name || 'N/A',
@@ -81,23 +88,30 @@ const AssetReclassify = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    if (name === 'new_category_id') {
-      setFilteredGroups(groupOptions.filter(g => g.category_id === parseInt(value)));
-      setFormData(prev => ({ ...prev, new_group_id: '', new_sub_group_id: '' }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
-    if (name === 'new_group_id') {
-      setFilteredSubGroups(subGroupOptions.filter(s => s.group_id === parseInt(value)));
-      setFormData(prev => ({ ...prev, new_sub_group_id: '' }));
+
+    if (name === 'new_category_code') {
+      setFilteredGroups(groupOptions.filter(g => g.category_code === parseInt(value)));
+      setFormData(prev => ({ ...prev, new_group_code: '', new_sub_group_code: '' }));
+    }
+    if (name === 'new_group_code') {
+      setFilteredSubGroups(subGroupOptions.filter(s => s.group_code === parseInt(value)));
+      setFormData(prev => ({ ...prev, new_sub_group_code: '' }));
     }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('AssetReclassify');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     try {
       if (editId) await api.update(editId, formData);
       else await api.create(formData);
@@ -105,7 +119,15 @@ const AssetReclassify = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Save failed');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -132,22 +154,24 @@ const AssetReclassify = () => {
     });
 
     // Set filters
-    setFilteredGroups(groupOptions.filter(g => g.category_id === row.new_category_id));
-    setFilteredSubGroups(subGroupOptions.filter(s => s.group_id === row.new_group_id));
+    setFilteredGroups(groupOptions.filter(g => g.category_code === row.new_category_code));
+    setFilteredSubGroups(subGroupOptions.filter(s => s.group_code === row.new_group_code));
 
     setFormData(clean);
     setEditId(row.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
   const resetForm = () => {
     setFormData({
       asset_id: '', reclassify_date: new Date().toISOString().split('T')[0], reason: '',
-      old_category_id: '', old_group_id: '', old_sub_group_id: '',
-      new_category_id: '', new_group_id: '', new_sub_group_id: ''
+      old_category_code: '', old_group_code: '', old_sub_group_code: '',
+      new_category_code: '', new_group_code: '', new_sub_group_code: ''
     });
     setOldLabels({ category: '', group: '', subGroup: '' });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
@@ -203,9 +227,9 @@ const AssetReclassify = () => {
           <form onSubmit={handleSave}>
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Asset & Date</div>
             <div className="form-row">
-              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} />
-              <FormField label="Date" name="reclassify_date" type="date" value={formData.reclassify_date} onChange={handleInputChange} required />
-              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} />
+              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
+              <FormField label="Date" name="reclassify_date" type="date" value={formData.reclassify_date} onChange={handleInputChange} required error={fieldErrors.reclassify_date} />
+              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} error={fieldErrors.reason} />
             </div>
 
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 — Reclassification</div>
@@ -218,9 +242,9 @@ const AssetReclassify = () => {
               </div>
               <div style={{ flex: 1, padding: '10px' }}>
                 <p><strong>New Classification</strong></p>
-                <FormField label="New Category" name="new_category_id" type="select" options={categoryOptions.map(c => ({ id: c.id, label: c.name }))} value={formData.new_category_id} onChange={handleInputChange} required />
-                <FormField label="New Group" name="new_group_id" type="select" options={filteredGroups.map(g => ({ id: g.id, label: g.name }))} value={formData.new_group_id} onChange={handleInputChange} required />
-                <FormField label="New Sub Group" name="new_sub_group_id" type="select" options={filteredSubGroups.map(s => ({ id: s.id, label: s.name }))} value={formData.new_sub_group_id} onChange={handleInputChange} />
+                <FormField label="New Category" name="new_category_code" type="select" options={categoryOptions.map(c => ({ id: c.id, label: c.name }))} value={formData.new_category_code} onChange={handleInputChange} required error={fieldErrors.new_category_code} />
+                <FormField label="New Group" name="new_group_code" type="select" options={filteredGroups.map(g => ({ id: g.id, label: g.name }))} value={formData.new_group_code} onChange={handleInputChange} required error={fieldErrors.new_group_code} />
+                <FormField label="New Sub Group" name="new_sub_group_code" type="select" options={filteredSubGroups.map(s => ({ id: s.id, label: s.name }))} value={formData.new_sub_group_code} onChange={handleInputChange} error={fieldErrors.new_sub_group_code} />
               </div>
             </div>
 

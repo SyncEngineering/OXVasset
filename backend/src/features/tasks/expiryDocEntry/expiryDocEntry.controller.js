@@ -14,8 +14,8 @@ export const getAll = async (req, res, next) => {
         a.asset_code, a.asset_name,
         dt.doc_type_name, dt.alert_before_days
       FROM tbl_expiry_document_entry e
-      JOIN tbl_asset_master a ON e.asset_id = a.id
-      JOIN tbl_expiry_document_type dt ON e.doc_type_id = dt.id
+      JOIN tbl_asset_master a ON e.asset_id = a.asset_id
+      JOIN tbl_expiry_document_type dt ON e.expiry_doc_type_code = dt.expiry_doc_type_code
       ORDER BY e.expiry_date ASC
     `);
     res.json({ success: true, data: rows });
@@ -31,8 +31,8 @@ export const getById = async (req, res, next) => {
         a.asset_code, a.asset_name,
         dt.doc_type_name, dt.alert_before_days
       FROM tbl_expiry_document_entry e
-      JOIN tbl_asset_master a ON e.asset_id = a.id
-      JOIN tbl_expiry_document_type dt ON e.doc_type_id = dt.id
+      JOIN tbl_asset_master a ON e.asset_id = a.asset_id
+      JOIN tbl_expiry_document_type dt ON e.expiry_doc_type_code = dt.expiry_doc_type_code
       WHERE e.id = ?
     `, [req.params.id]);
     
@@ -45,7 +45,7 @@ export const getById = async (req, res, next) => {
 
 export const getAssetOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, asset_code, asset_name FROM tbl_asset_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT asset_id AS id, asset_code, asset_name FROM tbl_asset_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -54,7 +54,7 @@ export const getAssetOptions = async (req, res, next) => {
 
 export const getDocTypeOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, doc_type_name AS name, alert_before_days FROM tbl_expiry_document_type WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT expiry_doc_type_code AS id, doc_type_name AS name, alert_before_days FROM tbl_expiry_document_type WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);

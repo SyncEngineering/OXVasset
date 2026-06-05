@@ -11,7 +11,7 @@ const CompanyLicense = () => {
   const [docOptions, setDocOptions] = useState([]);
   
   const [formData, setFormData] = useState({
-    doc_type_id: '', document_name: '', document_no: '',
+    expiry_doc_type_code: '', document_name: '', document_no: '',
     issue_date: '', expiry_date: '', issuing_authority: '',
     alert_before_days: 30, remarks: ''
   });
@@ -20,6 +20,7 @@ const CompanyLicense = () => {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -41,11 +42,15 @@ const CompanyLicense = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('CompanyLicense');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleFileChange = (e) => {
@@ -54,6 +59,8 @@ const CompanyLicense = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     const data = new FormData();
     Object.keys(formData).forEach(key => data.append(key, formData[key]));
     if (selectedFile) data.append('document', selectedFile);
@@ -65,7 +72,15 @@ const CompanyLicense = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Save failed');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -75,7 +90,7 @@ const CompanyLicense = () => {
     if (clean.expiry_date) clean.expiry_date = clean.expiry_date.split('T')[0];
     
     setFormData({
-        doc_type_id: clean.doc_type_id,
+        expiry_doc_type_code: clean.expiry_doc_type_code,
         document_name: clean.document_name,
         document_no: clean.document_no || '',
         issue_date: clean.issue_date || '',
@@ -85,17 +100,19 @@ const CompanyLicense = () => {
         remarks: clean.remarks || ''
     });
     setEditId(row.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
   const resetForm = () => {
     setFormData({
-      doc_type_id: '', document_name: '', document_no: '',
+      expiry_doc_type_code: '', document_name: '', document_no: '',
       issue_date: '', expiry_date: '', issuing_authority: '',
       alert_before_days: 30, remarks: ''
     });
     setSelectedFile(null);
     setEditId(null);
+    setFieldErrors({});
   };
 
   const getExpiryAlert = (expiryDate, alertDays) => {
@@ -142,17 +159,17 @@ const CompanyLicense = () => {
           <div className="form-section-title">{editId ? 'Edit License' : 'New License Entry'}</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Doc Type" name="doc_type_id" type="select" options={docOptions.map(d => ({ id: d.id, label: d.name }))} value={formData.doc_type_id} onChange={handleInputChange} required />
-              <FormField label="Document Name" name="document_name" value={formData.document_name} onChange={handleInputChange} required />
-              <FormField label="Document No" name="document_no" value={formData.document_no} onChange={handleInputChange} />
+              <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.expiry_doc_type_code, label: d.doc_type_name }))} value={formData.expiry_doc_type_code} onChange={handleInputChange} required error={fieldErrors.expiry_doc_type_code} />
+              <FormField label="Document Name" name="document_name" value={formData.document_name} onChange={handleInputChange} required error={fieldErrors.document_name} />
+              <FormField label="Document No" name="document_no" value={formData.document_no} onChange={handleInputChange} error={fieldErrors.document_no} />
             </div>
             <div className="form-row">
-              <FormField label="Issue Date" name="issue_date" type="date" value={formData.issue_date} onChange={handleInputChange} />
-              <FormField label="Expiry Date" name="expiry_date" type="date" value={formData.expiry_date} onChange={handleInputChange} />
-              <FormField label="Alert Before (Days)" name="alert_before_days" type="number" value={formData.alert_before_days} onChange={handleInputChange} />
+              <FormField label="Issue Date" name="issue_date" type="date" value={formData.issue_date} onChange={handleInputChange} error={fieldErrors.issue_date} />
+              <FormField label="Expiry Date" name="expiry_date" type="date" value={formData.expiry_date} onChange={handleInputChange} error={fieldErrors.expiry_date} />
+              <FormField label="Alert Before (Days)" name="alert_before_days" type="number" value={formData.alert_before_days} onChange={handleInputChange} error={fieldErrors.alert_before_days} />
             </div>
             <div className="form-row">
-              <FormField label="Issuing Authority" name="issuing_authority" value={formData.issuing_authority} onChange={handleInputChange} />
+              <FormField label="Issuing Authority" name="issuing_authority" value={formData.issuing_authority} onChange={handleInputChange} error={fieldErrors.issuing_authority} />
               <div className="form-group">
                 <label>Document File</label>
                 <input type="file" onChange={handleFileChange} accept=".pdf,.jpg,.jpeg,.png" />
@@ -162,7 +179,7 @@ const CompanyLicense = () => {
               </div>
             </div>
             <div className="form-row">
-              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} />
+              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} error={fieldErrors.remarks} />
             </div>
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button type="submit" className="primary">Save</button>

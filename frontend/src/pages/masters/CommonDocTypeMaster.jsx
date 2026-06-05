@@ -1,36 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/masters/commonDocTypeApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
+import Modal from '../../components/common/Modal.jsx';
 import Table from '../../components/common/Table.jsx';
-import StatusBadge from '../../components/common/StatusBadge.jsx';
 import '../../styles/form.css';
 import '../../styles/table.css';
 
 const CommonDocTypeMaster = () => {
-  const [records, setRecords] = useState([]);
-  const [formData, setFormData] = useState({ 
-    doc_type_code: '', 
-    doc_type_name: '', 
-    description: '', 
+  const initialFormState = {
+    doc_type_code: '',
+    doc_type_name: '',
+    description: '',
     is_mandatory: 0,
-    is_active: 1 
-  });
-  const [editId, setEditId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+    is_active: 1
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [records, setRecords] = useState([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchRecords = async () => {
-    setLoading(true);
     try {
       const res = await api.getAll();
       if (res.success) setRecords(res.data);
     } catch (err) {
-      setError('Failed to fetch records');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch records');
     }
   };
 
@@ -40,154 +37,156 @@ const CommonDocTypeMaster = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({ 
-      ...prev, 
-      [name]: type === 'checkbox' ? (checked ? 1 : 0) : value 
-    }));
+    let finalValue = value;
+    if (type === 'checkbox') {
+      finalValue = checked ? 1 : 0;
+    } else if (type === 'radio') {
+      finalValue = parseInt(value, 10);
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleFillDummy = () => {
-    const dummy = getDummyData('CommonDocType');
-    setFormData(prev => ({ ...prev, ...dummy }));
+  const handleClear = () => {
+    setFormData(initialFormState);
+    setFieldErrors({});
+    setError('');
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async (isUpdate = false) => {
+    setError('');
+    setFieldErrors({});
+    setLoading(true);
     try {
-      if (editId) {
-        await api.update(editId, formData);
+      if (isUpdate) {
+        await api.update(formData.doc_type_code, formData);
       } else {
-        await api.create(formData);
+        const res = await api.create(formData);
+        if (res.success) {
+           setFormData(prev => ({...prev, doc_type_code: res.id}));
+        }
       }
-      setShowForm(false);
-      setFormData({ doc_type_code: '', doc_type_name: '', description: '', is_mandatory: 0, is_active: 1 });
-      setEditId(null);
       fetchRecords();
+      alert(isUpdate ? 'Updated successfully' : 'Saved successfully');
     } catch (err) {
-      setError('Failed to save record');
+      if (err.response?.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => { errors[e.path] = e.msg; });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Operation failed');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (record) => {
-    setFormData({
-      doc_type_code: record.doc_type_code,
-      doc_type_name: record.doc_type_name,
-      description: record.description || '',
-      is_mandatory: record.is_mandatory,
-      is_active: record.is_active
-    });
-    setEditId(record.id);
-    setShowForm(true);
-  };
+  const handleDelete = async () => {
+    if (!formData.doc_type_code) return;
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
 
-  const handleToggleActive = async (id) => {
     try {
-      await api.toggleActive(id);
+      await api.remove(formData.doc_type_code);
+      handleClear();
       fetchRecords();
+      alert('Deleted successfully');
     } catch (err) {
-      setError('Failed to update status');
+      setError(err.response?.data?.message || 'Delete failed');
     }
   };
 
-  const filteredRecords = records.filter(r => 
-    r.doc_type_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.doc_type_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSelectRecord = (record) => {
+    setFormData({
+      ...record,
+      description: record.description || ''
+    });
+    setShowSearchModal(false);
+  };
 
-  const columns = [
-    { key: 'doc_type_code', label: 'Code', width: '150px' },
+  const searchColumns = [
+    { key: 'doc_type_code', label: 'Code', width: '80px' },
     { key: 'doc_type_name', label: 'Name', width: '250px' },
-    { key: 'mandatory_display', label: 'Mandatory', width: '100px' },
-    { key: 'status_display', label: 'Status', width: '100px' }
-  ];
-
-  const tableData = filteredRecords.map(r => ({
-    ...r,
-    mandatory_display: r.is_mandatory ? 'Yes' : 'No',
-    status_display: <StatusBadge status={r.is_active ? 'active' : 'inactive'} />
-  }));
-
-  const actions = [
-    { label: 'Edit', onClick: handleEdit },
-    { label: 'Toggle Active', onClick: (r) => handleToggleActive(r.id) }
+    { key: 'is_mandatory', label: 'Mandatory', width: '100px', render: (val) => val ? 'YES' : 'NO' }
   ];
 
   return (
-    <div>
-      <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Common Document Type Master</div>
+    <div className="common-doc-type-master">
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
+        <span style={{ fontWeight: 'bold' }}>Common Document Type Master</span>
       </div>
 
-      <div className="form-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="Search code or name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button className="secondary" onClick={() => setSearchTerm('')}>Clear</button>
+      <div className="form-container" style={{ marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', width: '120px' }}>Search</label>
+          <button className="secondary" onClick={() => setShowSearchModal(true)} style={{ padding: '2px 5px' }}>
+            🔍
+          </button>
         </div>
-        <button className="primary" onClick={() => { setShowForm(true); setEditId(null); setFormData({ doc_type_code: '', doc_type_name: '', description: '', is_mandatory: 0, is_active: 1 }); }}>
-          Add New
-        </button>
-      </div>
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-section-title">{editId ? `Edit — ${formData.doc_type_code}` : 'Add New Document Type'}</div>
-          <form onSubmit={handleSave}>
-            <div className="form-row">
-              <FormField 
-                label="Document Type Code" 
-                name="doc_type_code" 
-                value={formData.doc_type_code} 
-                onChange={handleInputChange} 
-                required 
-              />
-              <FormField 
-                label="Document Type Name" 
-                name="doc_type_name" 
-                value={formData.doc_type_name} 
-                onChange={handleInputChange} 
-                required 
-              />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Doc Type Code</label>
+            <input type="text" value={formData.doc_type_code} readOnly style={{ width: '150px', backgroundColor: '#f0f0f0' }} />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Doc Type Name</label>
+            <input 
+              type="text" 
+              name="doc_type_name" 
+              value={formData.doc_type_name} 
+              onChange={handleInputChange} 
+              style={{ width: '400px' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Description</label>
+            <textarea 
+              name="description" 
+              value={formData.description} 
+              onChange={handleInputChange} 
+              style={{ width: '400px', height: '60px', fontFamily: 'Arial' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Is Mandatory?</label>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="is_mandatory" value={1} checked={formData.is_mandatory === 1} onChange={handleInputChange} /> Yes
+              </label>
+              <label style={{ fontWeight: 'normal', fontSize: '12px' }}>
+                <input type="radio" name="is_mandatory" value={0} checked={formData.is_mandatory === 0} onChange={handleInputChange} /> No
+              </label>
             </div>
-            <div className="form-row">
-              <FormField 
-                label="Description" 
-                name="description" 
-                type="textarea" 
-                value={formData.description} 
-                onChange={handleInputChange} 
-              />
-            </div>
-            <div className="form-row">
-              <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  id="is_mandatory" 
-                  name="is_mandatory" 
-                  checked={formData.is_mandatory === 1} 
-                  onChange={handleInputChange} 
-                />
-                <label htmlFor="is_mandatory">Is Mandatory?</label>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button type="submit" className="primary">Save</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
-              <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
-            </div>
-          </form>
+          </div>
         </div>
-      )}
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button className="secondary" onClick={handleClear} style={{ backgroundColor: '#008cba', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Clear</button>
+          <button className="primary" onClick={() => handleSave(false)} disabled={formData.doc_type_code !== ''} style={{ backgroundColor: '#003399', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Save 💾</button>
+          <button className="primary" onClick={() => handleSave(true)} disabled={formData.doc_type_code === ''} style={{ backgroundColor: '#4caf50', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Update ⤴️</button>
+          <button className="danger" onClick={handleDelete} disabled={formData.doc_type_code === ''} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Delete 🗑️</button>
+        </div>
 
-      <div className="form-container">
-        <Table columns={columns} data={tableData} actions={actions} />
+        {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '12px' }}>{error}</div>}
       </div>
+
+      <Modal 
+        title="DOCUMENT TYPE SEARCH" 
+        isOpen={showSearchModal} 
+        onClose={() => setShowSearchModal(false)}
+        width="800px"
+      >
+        <Table 
+          columns={searchColumns} 
+          data={records} 
+          onRowClick={handleSelectRecord}
+        />
+      </Modal>
     </div>
   );
 };

@@ -24,11 +24,11 @@ export const getDashboardStats = async (req, res, next) => {
     
     // 2. Assets by Category (for Bar Chart)
     const assetsByCategory = await runQuery(`
-      SELECT COALESCE(c.category_name, 'Unknown') as label, COUNT(a.id) as value
+      SELECT COALESCE(c.category_name, 'Unknown') as label, COUNT(a.asset_id) as value
       FROM tbl_asset_category_master c
-      LEFT JOIN tbl_asset_master a ON c.id = a.category_id AND a.is_active = 1
+      LEFT JOIN tbl_asset_master a ON c.category_code = a.category_code AND a.is_active = 1
       WHERE c.is_active = 1
-      GROUP BY c.id, c.category_name
+      GROUP BY c.category_code, c.category_name
     `);
 
     // 3. Asset Status Distribution (for Doughnut Chart)
@@ -43,16 +43,16 @@ export const getDashboardStats = async (req, res, next) => {
     const valueByDivision = await runQuery(`
       SELECT COALESCE(d.division_name, 'Unknown') as label, COALESCE(SUM(a.purchase_cost), 0) as value
       FROM tbl_asset_division_master d
-      LEFT JOIN tbl_asset_master a ON d.id = a.division_id AND a.is_active = 1
+      LEFT JOIN tbl_asset_master a ON d.division_code = a.division_code AND a.is_active = 1
       WHERE d.is_active = 1
-      GROUP BY d.id, d.division_name
+      GROUP BY d.division_code, d.division_name
     `);
 
     // 5. Expiring Documents Count
     const expiringDocs = await runQuery(`
       SELECT COUNT(*) as count 
       FROM tbl_expiry_document_entry e
-      JOIN tbl_expiry_document_type dt ON e.doc_type_id = dt.id
+      JOIN tbl_expiry_document_type dt ON e.expiry_doc_type_code = dt.expiry_doc_type_code
       WHERE e.is_active = 1 
       AND DATEDIFF(e.expiry_date, CURDATE()) BETWEEN 0 AND dt.alert_before_days
     `);

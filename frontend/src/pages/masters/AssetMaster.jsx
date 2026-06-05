@@ -13,8 +13,8 @@ const AssetMaster = () => {
     divisions: [], assetTypes: [], assetSubTypes: [], categories: [], groups: [], subGroups: [], locations: []
   });
   const [formData, setFormData] = useState({
-    asset_code: '', asset_name: '', description: '', division_id: '', asset_status: 'active', remarks: '',
-    asset_type_id: '', asset_sub_type_id: '', category_id: '', group_id: '', sub_group_id: '', location_id: '',
+    asset_code: '', asset_name: '', description: '', division_code: '', asset_status: 'active', remarks: '',
+    type_code: '', sub_type_code: '', category_code: '', group_code: '', sub_group_code: '', location_code: '',
     serial_number: '', model_number: '', manufacturer: '', purchase_date: '', purchase_cost: 0,
     salvage_value: 0, useful_life_years: 0, depreciation_method: 'straight_line', depreciation_rate: 0,
     accumulated_depreciation: 0, barcode: '', qr_code: '', is_active: 1
@@ -26,6 +26,7 @@ const AssetMaster = () => {
   const [divisionFilter, setDivisionFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Derived state for dependent dropdowns
   const [filteredSubTypes, setFilteredSubTypes] = useState([]);
@@ -53,46 +54,53 @@ const AssetMaster = () => {
   }, []);
 
   useEffect(() => {
-    if (formData.asset_type_id) {
-      setFilteredSubTypes(dropdownOptions.assetSubTypes.filter(s => s.asset_type_id === parseInt(formData.asset_type_id)));
+    if (formData.type_code) {
+      setFilteredSubTypes(dropdownOptions.assetSubTypes.filter(s => s.type_code === parseInt(formData.type_code)));
     } else {
       setFilteredSubTypes([]);
     }
-  }, [formData.asset_type_id, dropdownOptions.assetSubTypes]);
+  }, [formData.type_code, dropdownOptions.assetSubTypes]);
 
   useEffect(() => {
-    if (formData.category_id) {
-      setFilteredGroups(dropdownOptions.groups.filter(g => g.category_id === parseInt(formData.category_id)));
+    if (formData.category_code) {
+      setFilteredGroups(dropdownOptions.groups.filter(g => g.category_code === parseInt(formData.category_code)));
     } else {
       setFilteredGroups([]);
     }
-  }, [formData.category_id, dropdownOptions.groups]);
+  }, [formData.category_code, dropdownOptions.groups]);
 
   useEffect(() => {
-    if (formData.group_id) {
-      setFilteredSubGroups(dropdownOptions.subGroups.filter(s => s.group_id === parseInt(formData.group_id)));
+    if (formData.group_code) {
+      setFilteredSubGroups(dropdownOptions.subGroups.filter(s => s.group_code === parseInt(formData.group_code)));
     } else {
       setFilteredSubGroups([]);
     }
-  }, [formData.group_id, dropdownOptions.subGroups]);
+  }, [formData.group_code, dropdownOptions.subGroups]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
     // Reset dependents
-    if (name === 'asset_type_id') setFormData(prev => ({ ...prev, asset_sub_type_id: '' }));
-    if (name === 'category_id') setFormData(prev => ({ ...prev, group_id: '', sub_group_id: '' }));
-    if (name === 'group_id') setFormData(prev => ({ ...prev, sub_group_id: '' }));
+    if (name === 'type_code') setFormData(prev => ({ ...prev, sub_type_code: '' }));
+    if (name === 'category_code') setFormData(prev => ({ ...prev, group_code: '', sub_group_code: '' }));
+    if (name === 'group_code') setFormData(prev => ({ ...prev, sub_group_code: '' }));
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('AssetMaster');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     try {
       if (editId) {
         await api.update(editId, formData);
@@ -103,7 +111,15 @@ const AssetMaster = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError('Failed to save asset');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save asset');
+      }
     }
   };
 
@@ -113,26 +129,28 @@ const AssetMaster = () => {
     if (cleanRecord.purchase_date) cleanRecord.purchase_date = cleanRecord.purchase_date.split('T')[0];
     
     setFormData(cleanRecord);
-    setEditId(record.id);
+    setEditId(record.asset_id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
   const resetForm = () => {
     setFormData({
-      asset_code: '', asset_name: '', description: '', division_id: '', asset_status: 'active', remarks: '',
-      asset_type_id: '', asset_sub_type_id: '', category_id: '', group_id: '', sub_group_id: '', location_id: '',
+      asset_code: '', asset_name: '', description: '', division_code: '', asset_status: 'active', remarks: '',
+      type_code: '', sub_type_code: '', category_code: '', group_code: '', sub_group_code: '', location_code: '',
       serial_number: '', model_number: '', manufacturer: '', purchase_date: '', purchase_cost: 0,
       salvage_value: 0, useful_life_years: 0, depreciation_method: 'straight_line', depreciation_rate: 0,
       accumulated_depreciation: 0, barcode: '', qr_code: '', is_active: 1
     });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
     const matchesSearch = r.asset_code.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          r.asset_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter ? r.asset_status === statusFilter : true;
-    const matchesDivision = divisionFilter ? r.division_id === parseInt(divisionFilter) : true;
+    const matchesDivision = divisionFilter ? r.division_code === parseInt(divisionFilter) : true;
     return matchesSearch && matchesStatus && matchesDivision;
   });
 
@@ -156,7 +174,7 @@ const AssetMaster = () => {
 
   const actions = [
     { label: 'Edit', onClick: handleEdit },
-    { label: 'Toggle', onClick: (r) => api.toggleActive(r.id).then(fetchData) }
+    { label: 'Toggle', onClick: (r) => api.toggleActive(r.asset_id).then(fetchData) }
   ];
 
   return (
@@ -189,50 +207,50 @@ const AssetMaster = () => {
           <form onSubmit={handleSave}>
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Basic Information</div>
             <div className="form-row">
-              <FormField label="Asset Code" name="asset_code" value={formData.asset_code} onChange={handleInputChange} required />
-              <FormField label="Asset Name" name="asset_name" value={formData.asset_name} onChange={handleInputChange} required />
-              <FormField label="Division" name="division_id" type="select" options={dropdownOptions.divisions} value={formData.division_id} onChange={handleInputChange} required />
+              <FormField label="Asset Code" name="asset_code" value={formData.asset_code} onChange={handleInputChange} required error={fieldErrors.asset_code} />
+              <FormField label="Asset Name" name="asset_name" value={formData.asset_name} onChange={handleInputChange} required error={fieldErrors.asset_name} />
+              <FormField label="Division" name="division_code" type="select" options={dropdownOptions.divisions} value={formData.division_code} onChange={handleInputChange} required error={fieldErrors.division_code} />
               <FormField label="Status" name="asset_status" type="select" options={[
                 { id: 'active', label: 'Active' }, { id: 'disposed', label: 'Disposed' }, { id: 'transferred', label: 'Transferred' }, { id: 'wip', label: 'WIP' }, { id: 'scrapped', label: 'Scrapped' }
-              ]} value={formData.asset_status} onChange={handleInputChange} required />
+              ]} value={formData.asset_status} onChange={handleInputChange} required error={fieldErrors.asset_status} />
             </div>
             <div className="form-row">
-              <FormField label="Description" name="description" type="textarea" value={formData.description} onChange={handleInputChange} />
-              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} />
+              <FormField label="Description" name="description" type="textarea" value={formData.description} onChange={handleInputChange} error={fieldErrors.description} />
+              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} error={fieldErrors.remarks} />
             </div>
 
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 — Classification</div>
             <div className="form-row">
-              <FormField label="Asset Type" name="asset_type_id" type="select" options={dropdownOptions.assetTypes} value={formData.asset_type_id} onChange={handleInputChange} required />
-              <FormField label="Asset Sub Type" name="asset_sub_type_id" type="select" options={filteredSubTypes} value={formData.asset_sub_type_id} onChange={handleInputChange} />
-              <FormField label="Category" name="category_id" type="select" options={dropdownOptions.categories} value={formData.category_id} onChange={handleInputChange} required />
+              <FormField label="Asset Type" name="type_code" type="select" options={dropdownOptions.assetTypes} value={formData.type_code} onChange={handleInputChange} required error={fieldErrors.type_code} />
+              <FormField label="Asset Sub Type" name="sub_type_code" type="select" options={filteredSubTypes} value={formData.sub_type_code} onChange={handleInputChange} error={fieldErrors.sub_type_code} />
+              <FormField label="Category" name="category_code" type="select" options={dropdownOptions.categories} value={formData.category_code} onChange={handleInputChange} required error={fieldErrors.category_code} />
             </div>
             <div className="form-row">
-              <FormField label="Group" name="group_id" type="select" options={filteredGroups} value={formData.group_id} onChange={handleInputChange} required />
-              <FormField label="Sub Group" name="sub_group_id" type="select" options={filteredSubGroups} value={formData.sub_group_id} onChange={handleInputChange} />
-              <FormField label="Location" name="location_id" type="select" options={dropdownOptions.locations} value={formData.location_id} onChange={handleInputChange} />
+              <FormField label="Group" name="group_code" type="select" options={filteredGroups} value={formData.group_code} onChange={handleInputChange} required error={fieldErrors.group_code} />
+              <FormField label="Sub Group" name="sub_group_code" type="select" options={filteredSubGroups} value={formData.sub_group_code} onChange={handleInputChange} error={fieldErrors.sub_group_code} />
+              <FormField label="Location" name="location_code" type="select" options={dropdownOptions.locations} value={formData.location_code} onChange={handleInputChange} error={fieldErrors.location_code} />
             </div>
 
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 3 — Purchase & Depreciation</div>
             <div className="form-row">
-              <FormField label="Serial Number" name="serial_number" value={formData.serial_number} onChange={handleInputChange} />
-              <FormField label="Model Number" name="model_number" value={formData.model_number} onChange={handleInputChange} />
-              <FormField label="Manufacturer" name="manufacturer" value={formData.manufacturer} onChange={handleInputChange} />
-              <FormField label="Purchase Date" name="purchase_date" type="date" value={formData.purchase_date} onChange={handleInputChange} />
+              <FormField label="Serial Number" name="serial_number" value={formData.serial_number} onChange={handleInputChange} error={fieldErrors.serial_number} />
+              <FormField label="Model Number" name="model_number" value={formData.model_number} onChange={handleInputChange} error={fieldErrors.model_number} />
+              <FormField label="Manufacturer" name="manufacturer" value={formData.manufacturer} onChange={handleInputChange} error={fieldErrors.manufacturer} />
+              <FormField label="Purchase Date" name="purchase_date" type="date" value={formData.purchase_date} onChange={handleInputChange} error={fieldErrors.purchase_date} />
             </div>
             <div className="form-row">
-              <FormField label="Purchase Cost" name="purchase_cost" type="number" value={formData.purchase_cost} onChange={handleInputChange} />
-              <FormField label="Salvage Value" name="salvage_value" type="number" value={formData.salvage_value} onChange={handleInputChange} />
-              <FormField label="Useful Life (Years)" name="useful_life_years" type="number" value={formData.useful_life_years} onChange={handleInputChange} />
+              <FormField label="Purchase Cost" name="purchase_cost" type="number" value={formData.purchase_cost} onChange={handleInputChange} error={fieldErrors.purchase_cost} />
+              <FormField label="Salvage Value" name="salvage_value" type="number" value={formData.salvage_value} onChange={handleInputChange} error={fieldErrors.salvage_value} />
+              <FormField label="Useful Life (Years)" name="useful_life_years" type="number" value={formData.useful_life_years} onChange={handleInputChange} error={fieldErrors.useful_life_years} />
               <FormField label="Depr. Method" name="depreciation_method" type="select" options={[
                 { id: 'straight_line', label: 'Straight Line' }, { id: 'wdv', label: 'WDV' }, { id: 'none', label: 'None' }
-              ]} value={formData.depreciation_method} onChange={handleInputChange} required />
+              ]} value={formData.depreciation_method} onChange={handleInputChange} required error={fieldErrors.depreciation_method} />
             </div>
             <div className="form-row">
-              <FormField label="Depr. Rate (%)" name="depreciation_rate" type="number" value={formData.depreciation_rate} onChange={handleInputChange} />
-              <FormField label="Accum. Depr." name="accumulated_depreciation" type="number" value={formData.accumulated_depreciation} onChange={handleInputChange} />
-              <FormField label="Barcode" name="barcode" value={formData.barcode} onChange={handleInputChange} />
-              <FormField label="QR Code" name="qr_code" value={formData.qr_code} onChange={handleInputChange} />
+              <FormField label="Depr. Rate (%)" name="depreciation_rate" type="number" value={formData.depreciation_rate} onChange={handleInputChange} error={fieldErrors.depreciation_rate} />
+              <FormField label="Accum. Depr." name="accumulated_depreciation" type="number" value={formData.accumulated_depreciation} onChange={handleInputChange} error={fieldErrors.accumulated_depreciation} />
+              <FormField label="Barcode" name="barcode" value={formData.barcode} onChange={handleInputChange} error={fieldErrors.barcode} />
+              <FormField label="QR Code" name="qr_code" value={formData.qr_code} onChange={handleInputChange} error={fieldErrors.qr_code} />
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>

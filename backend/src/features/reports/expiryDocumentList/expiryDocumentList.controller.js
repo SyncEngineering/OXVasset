@@ -5,7 +5,7 @@ import db from '../../../config/db.js';
  */
 export const getReport = async (req, res, next) => {
   try {
-    const { asset_id, doc_type_id, expiry_status, from_date, to_date } = req.query;
+    const { asset_id, expiry_doc_type_code, expiry_status, from_date, to_date } = req.query;
 
     let query = `
       SELECT 
@@ -17,9 +17,9 @@ export const getReport = async (req, res, next) => {
         dt.doc_type_name, dt.alert_before_days,
         DATEDIFF(e.expiry_date, CURDATE()) AS days_to_expiry
       FROM tbl_expiry_document_entry e
-      JOIN tbl_asset_master a ON e.asset_id = a.id
-      LEFT JOIN tbl_asset_division_master d ON a.division_id = d.id
-      JOIN tbl_expiry_document_type dt ON e.doc_type_id = dt.id
+      JOIN tbl_asset_master a ON e.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_division_master d ON a.division_code = d.division_code
+      JOIN tbl_expiry_document_type dt ON e.expiry_doc_type_code = dt.expiry_doc_type_code
       WHERE e.is_active = 1
     `;
     const params = [];
@@ -28,9 +28,9 @@ export const getReport = async (req, res, next) => {
       query += ` AND e.asset_id = ?`;
       params.push(asset_id);
     }
-    if (doc_type_id) {
-      query += ` AND e.doc_type_id = ?`;
-      params.push(doc_type_id);
+    if (expiry_doc_type_code) {
+      query += ` AND e.expiry_doc_type_code = ?`;
+      params.push(expiry_doc_type_code);
     }
     if (from_date) {
       query += ` AND e.expiry_date >= ?`;

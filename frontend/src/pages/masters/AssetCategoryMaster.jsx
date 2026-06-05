@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/masters/assetCategoryApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
+import Modal from '../../components/common/Modal.jsx';
 import Table from '../../components/common/Table.jsx';
-import StatusBadge from '../../components/common/StatusBadge.jsx';
 import '../../styles/form.css';
 import '../../styles/table.css';
 
 const AssetCategoryMaster = () => {
-  const [records, setRecords] = useState([]);
-  const [formData, setFormData] = useState({ category_code: '', category_name: '', description: '', is_active: 1 });
-  const [editId, setEditId] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const initialFormState = {
+    category_code: '',
+    category_name: '',
+    description: '',
+    is_active: 1
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [records, setRecords] = useState([]);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   const fetchRecords = async () => {
-    setLoading(true);
     try {
       const res = await api.getAll();
       if (res.success) setRecords(res.data);
     } catch (err) {
-      setError('Failed to fetch records');
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch records');
     }
   };
 
@@ -35,136 +37,137 @@ const AssetCategoryMaster = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
-  const handleFillDummy = () => {
-    const dummy = getDummyData('AssetCategory');
-    setFormData(prev => ({ ...prev, ...dummy }));
+  const handleClear = () => {
+    setFormData(initialFormState);
+    setFieldErrors({});
+    setError('');
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const handleSave = async (isUpdate = false) => {
+    setError('');
+    setFieldErrors({});
+    setLoading(true);
     try {
-      if (editId) {
-        await api.update(editId, formData);
+      if (isUpdate) {
+        await api.update(formData.category_code, formData);
       } else {
-        await api.create(formData);
+        const res = await api.create(formData);
+        if (res.success) {
+           setFormData(prev => ({...prev, category_code: res.id}));
+        }
       }
-      setShowForm(false);
-      setFormData({ category_code: '', category_name: '', description: '', is_active: 1 });
-      setEditId(null);
       fetchRecords();
+      alert(isUpdate ? 'Updated successfully' : 'Saved successfully');
     } catch (err) {
-      setError('Failed to save record');
+      if (err.response?.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => { errors[e.path] = e.msg; });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Operation failed');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleEdit = (record) => {
-    setFormData({
-      category_code: record.category_code,
-      category_name: record.category_name,
-      description: record.description || '',
-      is_active: record.is_active
-    });
-    setEditId(record.id);
-    setShowForm(true);
-  };
+  const handleDelete = async () => {
+    if (!formData.category_code) return;
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
 
-  const handleToggleActive = async (id) => {
     try {
-      await api.toggleActive(id);
+      await api.remove(formData.category_code);
+      handleClear();
       fetchRecords();
+      alert('Deleted successfully');
     } catch (err) {
-      setError('Failed to update status');
+      setError(err.response?.data?.message || 'Delete failed');
     }
   };
 
-  const filteredRecords = records.filter(r => 
-    r.category_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.category_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSelectRecord = (record) => {
+    setFormData({
+      ...record,
+      description: record.description || ''
+    });
+    setShowSearchModal(false);
+  };
 
-  const columns = [
-    { key: 'category_code', label: 'Code', width: '150px' },
+  const searchColumns = [
+    { key: 'category_code', label: 'Code', width: '80px' },
     { key: 'category_name', label: 'Name', width: '250px' },
-    { key: 'description', label: 'Description', width: '300px' },
-    { key: 'status_display', label: 'Status', width: '100px' }
-  ];
-
-  const tableData = filteredRecords.map(r => ({
-    ...r,
-    status_display: <StatusBadge status={r.is_active ? 'active' : 'inactive'} />
-  }));
-
-  const actions = [
-    { label: 'Edit', onClick: handleEdit },
-    { label: 'Toggle Active', onClick: (r) => handleToggleActive(r.id) }
+    { key: 'description', label: 'Description', width: '300px' }
   ];
 
   return (
-    <div>
-      <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Category Master</div>
+    <div className="asset-category-master">
+      <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
+        <span style={{ fontWeight: 'bold' }}>Asset Category Master</span>
       </div>
 
-      <div className="form-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input 
-            type="text" 
-            placeholder="Search code or name..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button className="secondary" onClick={() => setSearchTerm('')}>Clear</button>
+      <div className="form-container" style={{ marginTop: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', width: '120px' }}>Search</label>
+          <button className="secondary" onClick={() => setShowSearchModal(true)} style={{ padding: '2px 5px' }}>
+            🔍
+          </button>
         </div>
-        <button className="primary" onClick={() => { setShowForm(true); setEditId(null); setFormData({ category_code: '', category_name: '', description: '', is_active: 1 }); }}>
-          Add New
-        </button>
-      </div>
 
-      {showForm && (
-        <div className="form-container">
-          <div className="form-section-title">{editId ? `Edit — ${formData.category_code}` : 'Add New Category'}</div>
-          <form onSubmit={handleSave}>
-            <div className="form-row">
-              <FormField 
-                label="Category Code" 
-                name="category_code" 
-                value={formData.category_code} 
-                onChange={handleInputChange} 
-                required 
-              />
-              <FormField 
-                label="Category Name" 
-                name="category_name" 
-                value={formData.category_name} 
-                onChange={handleInputChange} 
-                required 
-              />
-            </div>
-            <div className="form-row">
-              <FormField 
-                label="Description" 
-                name="description" 
-                type="textarea" 
-                value={formData.description} 
-                onChange={handleInputChange} 
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-              <button type="submit" className="primary">Save</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
-              <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
-            </div>
-          </form>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Category Code</label>
+            <input type="text" value={formData.category_code} readOnly style={{ width: '150px', backgroundColor: '#f0f0f0' }} />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Category Name</label>
+            <input 
+              type="text" 
+              name="category_name" 
+              value={formData.category_name} 
+              onChange={handleInputChange} 
+              style={{ width: '400px' }} 
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontSize: '12px', width: '150px' }}>Description</label>
+            <textarea 
+              name="description" 
+              value={formData.description} 
+              onChange={handleInputChange} 
+              style={{ width: '400px', height: '60px', fontFamily: 'Arial' }} 
+            />
+          </div>
         </div>
-      )}
 
-      {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
+        <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+          <button className="secondary" onClick={handleClear} style={{ backgroundColor: '#008cba', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Clear</button>
+          <button className="primary" onClick={() => handleSave(false)} disabled={formData.category_code !== ''} style={{ backgroundColor: '#003399', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Save 💾</button>
+          <button className="primary" onClick={() => handleSave(true)} disabled={formData.category_code === ''} style={{ backgroundColor: '#4caf50', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Update ⤴️</button>
+          <button className="danger" onClick={handleDelete} disabled={formData.category_code === ''} style={{ backgroundColor: '#f44336', color: 'white', border: 'none', padding: '5px 20px', cursor: 'pointer' }}>Delete 🗑️</button>
+        </div>
 
-      <div className="form-container">
-        <Table columns={columns} data={tableData} actions={actions} />
+        {error && <div style={{ color: 'red', marginTop: '10px', fontSize: '12px' }}>{error}</div>}
       </div>
+
+      <Modal 
+        title="CATEGORY SEARCH" 
+        isOpen={showSearchModal} 
+        onClose={() => setShowSearchModal(false)}
+        width="800px"
+      >
+        <Table 
+          columns={searchColumns} 
+          data={records} 
+          onRowClick={handleSelectRecord}
+        />
+      </Modal>
     </div>
   );
 };

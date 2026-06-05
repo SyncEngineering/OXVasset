@@ -6,3 +6,4 @@ export const getParentOptions = () => axiosInstance.get('/asset-groups/parent-op
 export const create = (data) => axiosInstance.post('/asset-groups', data).then(res => res.data);
 export const update = (id, data) => axiosInstance.put(`/asset-groups/${id}`, data).then(res => res.data);
 export const toggleActive = (id) => axiosInstance.patch(`/asset-groups/${id}/toggle-active`).then(res => res.data);
+export const remove = (id) => axiosInstance.delete(`/asset-groups/${id}`).then(res => res.data);

@@ -17,13 +17,13 @@ export const getAll = async (req, res, next) => {
         osg.sub_group_name AS old_sub_group_name,
         nsg.sub_group_name AS new_sub_group_name
       FROM tbl_asset_reclassify r
-      JOIN tbl_asset_master a ON r.asset_id = a.id
-      LEFT JOIN tbl_asset_category_master oc ON r.old_category_id = oc.id
-      LEFT JOIN tbl_asset_category_master nc ON r.new_category_id = nc.id
-      LEFT JOIN tbl_asset_group_master og ON r.old_group_id = og.id
-      LEFT JOIN tbl_asset_group_master ng ON r.new_group_id = ng.id
-      LEFT JOIN tbl_asset_sub_group_master osg ON r.old_sub_group_id = osg.id
-      LEFT JOIN tbl_asset_sub_group_master nsg ON r.new_sub_group_id = nsg.id
+      JOIN tbl_asset_master a ON r.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_category_master oc ON r.old_category_code = oc.category_code
+      LEFT JOIN tbl_asset_category_master nc ON r.new_category_code = nc.category_code
+      LEFT JOIN tbl_asset_group_master og ON r.old_group_code = og.group_code
+      LEFT JOIN tbl_asset_group_master ng ON r.new_group_code = ng.group_code
+      LEFT JOIN tbl_asset_sub_group_master osg ON r.old_sub_group_code = osg.sub_group_code
+      LEFT JOIN tbl_asset_sub_group_master nsg ON r.new_sub_group_code = nsg.sub_group_code
       ORDER BY r.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -45,13 +45,13 @@ export const getById = async (req, res, next) => {
         osg.sub_group_name AS old_sub_group_name,
         nsg.sub_group_name AS new_sub_group_name
       FROM tbl_asset_reclassify r
-      JOIN tbl_asset_master a ON r.asset_id = a.id
-      LEFT JOIN tbl_asset_category_master oc ON r.old_category_id = oc.id
-      LEFT JOIN tbl_asset_category_master nc ON r.new_category_id = nc.id
-      LEFT JOIN tbl_asset_group_master og ON r.old_group_id = og.id
-      LEFT JOIN tbl_asset_group_master ng ON r.new_group_id = ng.id
-      LEFT JOIN tbl_asset_sub_group_master osg ON r.old_sub_group_id = osg.id
-      LEFT JOIN tbl_asset_sub_group_master nsg ON r.new_sub_group_id = nsg.id
+      JOIN tbl_asset_master a ON r.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_category_master oc ON r.old_category_code = oc.category_code
+      LEFT JOIN tbl_asset_category_master nc ON r.new_category_code = nc.category_code
+      LEFT JOIN tbl_asset_group_master og ON r.old_group_code = og.group_code
+      LEFT JOIN tbl_asset_group_master ng ON r.new_group_code = ng.group_code
+      LEFT JOIN tbl_asset_sub_group_master osg ON r.old_sub_group_code = osg.sub_group_code
+      LEFT JOIN tbl_asset_sub_group_master nsg ON r.new_sub_group_code = nsg.sub_group_code
       WHERE r.id = ?
     `, [req.params.id]);
     
@@ -66,11 +66,11 @@ export const getAssetOptions = async (req, res, next) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
-        id, asset_code, asset_name, category_id, group_id, sub_group_id,
-        (SELECT category_name FROM tbl_asset_category_master WHERE id = category_id) as category_name,
-        (SELECT group_name FROM tbl_asset_group_master WHERE id = group_id) as group_name,
-        (SELECT sub_group_name FROM tbl_asset_sub_group_master WHERE id = sub_group_id) as sub_group_name
-      FROM tbl_asset_master 
+        asset_id AS id, asset_code, asset_name, category_code, group_code, sub_group_code,
+        (SELECT category_name FROM tbl_asset_category_master WHERE category_code = a.category_code) as category_name,
+        (SELECT group_name FROM tbl_asset_group_master WHERE group_code = a.group_code) as group_name,
+        (SELECT sub_group_name FROM tbl_asset_sub_group_master WHERE sub_group_code = a.sub_group_code) as sub_group_name
+      FROM tbl_asset_master a
       WHERE is_active = 1 AND asset_status = 'active'
       ORDER BY asset_code
     `);
@@ -82,7 +82,7 @@ export const getAssetOptions = async (req, res, next) => {
 
 export const getCategoryOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, category_name AS name FROM tbl_asset_category_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT category_code AS id, category_name AS name FROM tbl_asset_category_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -91,7 +91,7 @@ export const getCategoryOptions = async (req, res, next) => {
 
 export const getGroupOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, group_name AS name, category_id FROM tbl_asset_group_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT group_code AS id, group_name AS name, category_code FROM tbl_asset_group_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -100,7 +100,7 @@ export const getGroupOptions = async (req, res, next) => {
 
 export const getSubGroupOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, sub_group_name AS name, group_id FROM tbl_asset_sub_group_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT sub_group_code AS id, sub_group_name AS name, group_code FROM tbl_asset_sub_group_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
@@ -164,8 +164,8 @@ export const approve = async (req, res, next) => {
       );
       
       await connection.query(
-        'UPDATE tbl_asset_master SET category_id = ?, group_id = ?, sub_group_id = ?, updated_by = "ADMIN" WHERE id = ?',
-        [entry.new_category_id, entry.new_group_id, entry.new_sub_group_id, entry.asset_id]
+        'UPDATE tbl_asset_master SET category_code = ?, group_code = ?, sub_group_code = ?, updated_by = "ADMIN" WHERE asset_id = ?',
+        [entry.new_category_code, entry.new_group_code, entry.new_sub_group_code, entry.asset_id]
       );
     } else {
       await connection.query(

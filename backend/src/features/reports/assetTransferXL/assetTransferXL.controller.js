@@ -18,11 +18,11 @@ export const exportXL = async (req, res, next) => {
         tl.location_name AS to_location,
         t.reason, t.approved_by, t.approved_at
       FROM tbl_asset_transfer t
-      JOIN tbl_asset_master a ON t.asset_id = a.id
-      LEFT JOIN tbl_asset_division_master fd ON t.from_division_id = fd.id
-      LEFT JOIN tbl_asset_division_master td ON t.to_division_id = td.id
-      LEFT JOIN tbl_location_area_master fl ON t.from_location_id = fl.id
-      LEFT JOIN tbl_location_area_master tl ON t.to_location_id = tl.id
+      JOIN tbl_asset_master a ON t.asset_id = a.asset_id
+      LEFT JOIN tbl_asset_division_master fd ON t.from_division_code = fd.division_code
+      LEFT JOIN tbl_asset_division_master td ON t.to_division_code = td.division_code
+      LEFT JOIN tbl_location_area_master fl ON t.from_location_code = fl.location_code
+      LEFT JOIN tbl_location_area_master tl ON t.to_location_code = tl.location_code
       WHERE 1=1
     `;
 

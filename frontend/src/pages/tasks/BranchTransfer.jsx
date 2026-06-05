@@ -15,13 +15,14 @@ const BranchTransfer = () => {
   const [formData, setFormData] = useState({
     asset_id: '', transfer_date: new Date().toISOString().split('T')[0], reason: '',
     from_branch: '', to_branch: '',
-    from_location_id: '', to_location_id: ''
+    from_location_code: '', to_location_code: ''
   });
   const [editId, setEditId] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -46,15 +47,21 @@ const BranchTransfer = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('BranchTransfer');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     try {
       if (editId) await api.update(editId, formData);
       else await api.create(formData);
@@ -62,7 +69,15 @@ const BranchTransfer = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Save failed');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -83,6 +98,7 @@ const BranchTransfer = () => {
     if (clean.transfer_date) clean.transfer_date = clean.transfer_date.split('T')[0];
     setFormData(clean);
     setEditId(row.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
@@ -90,9 +106,10 @@ const BranchTransfer = () => {
     setFormData({
       asset_id: '', transfer_date: new Date().toISOString().split('T')[0], reason: '',
       from_branch: '', to_branch: '',
-      from_location_id: '', to_location_id: ''
+      from_location_code: '', to_location_code: ''
     });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
@@ -145,19 +162,19 @@ const BranchTransfer = () => {
           <div className="form-section-title">Transfer Details</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required disabled={!!editId} />
-              <FormField label="Date" name="transfer_date" type="date" value={formData.transfer_date} onChange={handleInputChange} required />
-              <FormField label="From Branch" name="from_branch" value={formData.from_branch} onChange={handleInputChange} required />
-              <FormField label="To Branch" name="to_branch" value={formData.to_branch} onChange={handleInputChange} required />
+              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.asset_id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required disabled={!!editId} error={fieldErrors.asset_id} />
+              <FormField label="Date" name="transfer_date" type="date" value={formData.transfer_date} onChange={handleInputChange} required error={fieldErrors.transfer_date} />
+              <FormField label="From Branch" name="from_branch" value={formData.from_branch} onChange={handleInputChange} required error={fieldErrors.from_branch} />
+              <FormField label="To Branch" name="to_branch" value={formData.to_branch} onChange={handleInputChange} required error={fieldErrors.to_branch} />
             </div>
 
             <div className="form-row">
-              <FormField label="From Location" name="from_location_id" type="select" options={locationOptions} value={formData.from_location_id} onChange={handleInputChange} />
-              <FormField label="To Location" name="to_location_id" type="select" options={locationOptions} value={formData.to_location_id} onChange={handleInputChange} />
+              <FormField label="From Location" name="from_location_code" type="select" options={locationOptions} value={formData.from_location_code} onChange={handleInputChange} error={fieldErrors.from_location_code} />
+              <FormField label="To Location" name="to_location_code" type="select" options={locationOptions} value={formData.to_location_code} onChange={handleInputChange} error={fieldErrors.to_location_code} />
             </div>
 
             <div className="form-row">
-              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} />
+              <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} error={fieldErrors.reason} />
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>

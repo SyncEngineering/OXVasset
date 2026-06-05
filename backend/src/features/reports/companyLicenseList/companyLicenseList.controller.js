@@ -5,18 +5,18 @@ import { sendXlsx } from '../../../utils/xlsxExporter.js';
  * Common query logic for Company License List
  */
 const runQuery = async (filters) => {
-  const { doc_type_id, is_active, expiry_status } = filters;
+  const { expiry_doc_type_code, is_active, expiry_status } = filters;
   
   let query = `
     SELECT cl.*, dt.doc_type_name,
       DATEDIFF(cl.expiry_date, CURDATE()) AS days_to_expiry
     FROM tbl_company_license_documents cl
-    JOIN tbl_common_document_type dt ON cl.doc_type_id = dt.id
+    JOIN tbl_expiry_document_type dt ON cl.expiry_doc_type_code = dt.expiry_doc_type_code
     WHERE 1=1
   `;
 
   const params = [];
-  if (doc_type_id) { query += ' AND cl.doc_type_id = ?'; params.push(doc_type_id); }
+  if (expiry_doc_type_code) { query += ' AND cl.expiry_doc_type_code = ?'; params.push(expiry_doc_type_code); }
   if (is_active !== undefined && is_active !== '') { query += ' AND cl.is_active = ?'; params.push(is_active); }
   
   if (expiry_status === 'expired') {

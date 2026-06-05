@@ -17,7 +17,7 @@ const ExpiryDocumentList = () => {
   
   const [filters, setFilters] = useState({
     asset_id: '',
-    doc_type_id: '',
+    expiry_doc_type_code: '',
     expiry_status: 'all',
     from_date: '',
     to_date: ''
@@ -60,7 +60,7 @@ const ExpiryDocumentList = () => {
   };
 
   const handleClear = () => {
-    setFilters({ asset_id: '', doc_type_id: '', expiry_status: 'all', from_date: '', to_date: '' });
+    setFilters({ asset_id: '', expiry_doc_type_code: '', expiry_status: 'all', from_date: '', to_date: '' });
     setRecords([]);
     setSummary(null);
   };
@@ -136,16 +136,16 @@ const ExpiryDocumentList = () => {
           <FormField 
             label="Asset" 
             type="select" 
-            options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} — ${a.asset_name}` }))}
+            options={assetOptions.map(a => ({ id: a.asset_id, label: `${a.asset_code} — ${a.asset_name}` }))}
             value={filters.asset_id}
             onChange={(e) => setFilters({...filters, asset_id: e.target.value})}
           />
           <FormField 
             label="Doc Type" 
             type="select" 
-            options={docTypeOptions.map(dt => ({ id: dt.id, label: dt.doc_type_name }))}
-            value={filters.doc_type_id}
-            onChange={(e) => setFilters({...filters, doc_type_id: e.target.value})}
+            options={docTypeOptions.map(dt => ({ id: dt.expiry_doc_type_code, label: dt.doc_type_name }))}
+            value={filters.expiry_doc_type_code}
+            onChange={(e) => setFilters({...filters, expiry_doc_type_code: e.target.value})}
           />
           <FormField 
             label="Expiry Status" 

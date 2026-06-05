@@ -9,7 +9,7 @@ import axiosInstance from '../../api/axiosInstance.js';
 
 const CompanyLicenseList = () => {
   const [data, setData] = useState([]);
-  const [filters, setFilters] = useState({ doc_type_id: '', is_active: '', expiry_status: 'all' });
+  const [filters, setFilters] = useState({ expiry_doc_type_code: '', is_active: '', expiry_status: 'all' });
   const [docOptions, setDocOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -17,7 +17,7 @@ const CompanyLicenseList = () => {
 
   const fetchOptions = async () => {
     try {
-      const res = await axiosInstancetance.get('/common-doc-types');
+      const res = await axiosInstance.get('/expiry-doc-types');
       setDocOptions(res.data.data);
     } catch (err) {
       console.error('Failed to fetch doc types');
@@ -98,7 +98,7 @@ const CompanyLicenseList = () => {
 
       <div className="form-container filter-bar">
         <div className="form-row">
-          <FormField label="Doc Type" name="doc_type_id" type="select" options={docOptions.map(d => ({ id: d.id, label: d.doc_type_name }))} value={filters.doc_type_id} onChange={handleInputChange} />
+          <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.expiry_doc_type_code, label: d.doc_type_name }))} value={filters.expiry_doc_type_code} onChange={handleInputChange} />
           <FormField label="Status" name="is_active" type="select" options={[{ id: '1', label: 'Active' }, { id: '0', label: 'Inactive' }]} value={filters.is_active} onChange={handleInputChange} />
           <FormField label="Expiry Filter" name="expiry_status" type="select" options={[
             { id: 'all', label: 'All' }, { id: 'expired', label: 'Expired' }, { id: 'upcoming', label: 'Upcoming' }
@@ -106,7 +106,7 @@ const CompanyLicenseList = () => {
           
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button className="primary" onClick={fetchReport}>Search</button>
-            <button className="secondary" onClick={() => setFilters({ doc_type_id: '', is_active: '', expiry_status: 'all' })}>Clear</button>
+            <button className="secondary" onClick={() => setFilters({ expiry_doc_type_code: '', is_active: '', expiry_status: 'all' })}>Clear</button>
             <button className="secondary print-btn" onClick={() => window.print()}>Print</button>
             <button className="secondary" onClick={handleExport} disabled={exporting}>
               {exporting ? '...' : 'Export XL'}

@@ -81,7 +81,7 @@ const AssetSummaryDepreciation = () => {
 
       <div className="form-container filter-bar">
         <div className="form-row">
-          <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={filters.asset_id} onChange={handleInputChange} />
+          <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.asset_id, label: a.asset_code }))} value={filters.asset_id} onChange={handleInputChange} />
           <FormField label="Date From" name="from_date" type="date" value={filters.from_date} onChange={handleInputChange} />
           <FormField label="Date To" name="to_date" type="date" value={filters.to_date} onChange={handleInputChange} />
           <FormField label="Status" name="status" type="select" options={[

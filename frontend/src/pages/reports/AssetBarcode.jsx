@@ -16,8 +16,8 @@ const AssetBarcode = () => {
   const [categoryOptions, setCategoryOptions] = useState([]);
   
   const [filters, setFilters] = useState({
-    division_id: '',
-    category_id: '',
+    division_code: '',
+    category_code: '',
     asset_status: ''
   });
   
@@ -59,7 +59,7 @@ const AssetBarcode = () => {
   };
 
   const handleClear = () => {
-    setFilters({ division_id: '', category_id: '', asset_status: '' });
+    setFilters({ division_code: '', category_code: '', asset_status: '' });
     setAssets([]);
     setSelectedIds(new Set());
     setSelectedAssets([]);
@@ -77,14 +77,14 @@ const AssetBarcode = () => {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(new Set(assets.map(a => a.id)));
+      setSelectedIds(new Set(assets.map(a => a.asset_id)));
     } else {
       setSelectedIds(new Set());
     }
   };
 
   const handleGenerateLabels = () => {
-    const filtered = assets.filter(a => selectedIds.has(a.id));
+    const filtered = assets.filter(a => selectedIds.has(a.asset_id));
     setSelectedAssets(filtered);
   };
 
@@ -92,7 +92,7 @@ const AssetBarcode = () => {
     if (selectedAssets.length > 0 && window.JsBarcode) {
       selectedAssets.forEach(asset => {
         const value = asset.barcode || asset.asset_code;
-        window.JsBarcode(`#barcode-${asset.id}`, value, {
+        window.JsBarcode(`#barcode-${asset.asset_id}`, value, {
           format: "CODE128",
           width: 1.5,
           height: 40,
@@ -108,7 +108,7 @@ const AssetBarcode = () => {
       key: 'checkbox', 
       label: <input type="checkbox" onChange={handleSelectAll} checked={assets.length > 0 && selectedIds.size === assets.length} />, 
       width: '40px',
-      render: (row) => <input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => handleSelectRow(row.id)} />
+      render: (row) => <input type="checkbox" checked={selectedIds.has(row.asset_id)} onChange={() => handleSelectRow(row.asset_id)} />
     },
     { key: 'asset_code', label: 'Asset Code', width: '120px' },
     { key: 'asset_name', label: 'Asset Name', width: '200px' },
@@ -120,7 +120,7 @@ const AssetBarcode = () => {
 
   const tableData = assets.map(a => ({
     ...a,
-    checkbox: selectedIds.has(a.id) // used for render but handled by column.render
+    checkbox: selectedIds.has(a.asset_id) // used for render but handled by column.render
   }));
 
   return (
@@ -162,16 +162,16 @@ const AssetBarcode = () => {
           <FormField 
             label="Division" 
             type="select" 
-            options={divisionOptions.map(d => ({ id: d.id, label: d.division_name }))}
-            value={filters.division_id}
-            onChange={(e) => setFilters({...filters, division_id: e.target.value})}
+            options={divisionOptions.map(d => ({ id: d.division_code, label: d.division_name }))}
+            value={filters.division_code}
+            onChange={(e) => setFilters({...filters, division_code: e.target.value})}
           />
           <FormField 
             label="Category" 
             type="select" 
-            options={categoryOptions.map(c => ({ id: c.id, label: c.category_name }))}
-            value={filters.category_id}
-            onChange={(e) => setFilters({...filters, category_id: e.target.value})}
+            options={categoryOptions.map(c => ({ id: c.category_code, label: c.category_name }))}
+            value={filters.category_code}
+            onChange={(e) => setFilters({...filters, category_code: e.target.value})}
           />
           <FormField 
             label="Status" 
@@ -199,7 +199,7 @@ const AssetBarcode = () => {
           columns={columns} 
           data={tableData} 
           renderCustomRow={(row, cols) => (
-            <tr key={row.id}>
+            <tr key={row.asset_id}>
               {cols.map(col => (
                 <td key={col.key}>
                   {col.render ? col.render(row) : row[col.key]}
@@ -217,11 +217,11 @@ const AssetBarcode = () => {
 
       <div className="label-grid">
         {selectedAssets.map(asset => (
-          <div key={asset.id} className="barcode-label">
+          <div key={asset.asset_id} className="barcode-label">
             <div className="label-name" title={asset.asset_name}>{asset.asset_name}</div>
             <div className="label-code">{asset.asset_code}</div>
             <div className="label-division">{asset.division_name}</div>
-            <svg id={`barcode-${asset.id}`} className="barcode-svg"></svg>
+            <svg id={`barcode-${asset.asset_id}`} className="barcode-svg"></svg>
           </div>
         ))}
       </div>

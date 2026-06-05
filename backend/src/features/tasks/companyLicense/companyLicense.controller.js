@@ -12,7 +12,7 @@ export const getAll = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT cl.*, dt.doc_type_name
       FROM tbl_company_license_documents cl
-      JOIN tbl_common_document_type dt ON cl.doc_type_id = dt.id
+      JOIN tbl_expiry_document_type dt ON cl.expiry_doc_type_code = dt.expiry_doc_type_code
       ORDER BY cl.expiry_date ASC
     `);
     res.json({ success: true, data: rows });
@@ -26,7 +26,7 @@ export const getById = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT cl.*, dt.doc_type_name
       FROM tbl_company_license_documents cl
-      JOIN tbl_common_document_type dt ON cl.doc_type_id = dt.id
+      JOIN tbl_expiry_document_type dt ON cl.expiry_doc_type_code = dt.expiry_doc_type_code
       WHERE cl.id = ?
     `, [req.params.id]);
     
@@ -39,7 +39,7 @@ export const getById = async (req, res, next) => {
 
 export const getDocTypeOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, doc_type_name AS name FROM tbl_common_document_type WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT expiry_doc_type_code AS id, doc_type_name AS name FROM tbl_expiry_document_type WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);

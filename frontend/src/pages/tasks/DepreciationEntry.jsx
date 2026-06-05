@@ -22,6 +22,7 @@ const DepreciationEntry = () => {
   const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const fetchData = async () => {
     setLoading(true);
@@ -45,8 +46,13 @@ const DepreciationEntry = () => {
 
   const handleAssetSelect = (e) => {
     const assetId = e.target.value;
-    const asset = assetOptions.find(a => a.id === parseInt(assetId));
+    const { name } = e.target;
+    const asset = assetOptions.find(a => a.asset_id === parseInt(assetId));
     
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
     if (asset) {
       let depAmount = 0;
       const { depreciation_method, purchase_cost, salvage_value, useful_life_years, depreciation_rate, current_book_value } = asset;
@@ -80,15 +86,21 @@ const DepreciationEntry = () => {
       }
       return newState;
     });
+    if (fieldErrors[name]) {
+      setFieldErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleFillDummy = () => {
     const dummy = getDummyData('DepreciationEntry');
     setFormData(prev => ({ ...prev, ...dummy }));
+    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    setError('');
+    setFieldErrors({});
     try {
       if (editId) {
         await api.update(editId, formData);
@@ -99,7 +111,15 @@ const DepreciationEntry = () => {
       resetForm();
       fetchData();
     } catch (err) {
-      setError(err.message || 'Failed to save entry');
+      if (err.response && err.response.status === 400 && err.response.data.errors) {
+        const errors = {};
+        err.response.data.errors.forEach(e => {
+          errors[e.path] = e.msg;
+        });
+        setFieldErrors(errors);
+      } else {
+        setError(err.response?.data?.message || 'Failed to save entry');
+      }
     }
   };
 
@@ -135,6 +155,7 @@ const DepreciationEntry = () => {
     
     setFormData(cleanRecord);
     setEditId(record.id);
+    setFieldErrors({});
     setShowForm(true);
   };
 
@@ -145,6 +166,7 @@ const DepreciationEntry = () => {
       opening_book_value: 0, depreciation_amount: 0, closing_book_value: 0, remarks: ''
     });
     setEditId(null);
+    setFieldErrors({});
   };
 
   const filteredRecords = records.filter(r => {
@@ -211,24 +233,24 @@ const DepreciationEntry = () => {
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Entry Details</div>
             <div className="form-row">
               <FormField label="Asset" name="asset_id" type="select" 
-                options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} — ${a.asset_name}` }))} 
-                value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} />
-              <FormField label="Entry Date" name="entry_date" type="date" value={formData.entry_date} onChange={handleInputChange} required />
-              <FormField label="Period From" name="period_from" type="date" value={formData.period_from} onChange={handleInputChange} required />
-              <FormField label="Period To" name="period_to" type="date" value={formData.period_to} onChange={handleInputChange} required />
+                options={assetOptions.map(a => ({ id: a.asset_id, label: `${a.asset_code} — ${a.asset_name}` }))} 
+                value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
+              <FormField label="Entry Date" name="entry_date" type="date" value={formData.entry_date} onChange={handleInputChange} required error={fieldErrors.entry_date} />
+              <FormField label="Period From" name="period_from" type="date" value={formData.period_from} onChange={handleInputChange} required error={fieldErrors.period_from} />
+              <FormField label="Period To" name="period_to" type="date" value={formData.period_to} onChange={handleInputChange} required error={fieldErrors.period_to} />
               <FormField label="Depr. Method" name="depreciation_method" type="select" options={[
                 { id: 'straight_line', label: 'Straight Line' }, { id: 'wdv', label: 'WDV' }
-              ]} value={formData.depreciation_method} onChange={handleInputChange} required />
+              ]} value={formData.depreciation_method} onChange={handleInputChange} required error={fieldErrors.depreciation_method} />
             </div>
             <div className="form-row">
-              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} />
+              <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} error={fieldErrors.remarks} />
             </div>
 
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 — Calculation</div>
             <div className="form-row">
-              <FormField label="Opening Book Value" name="opening_book_value" type="number" value={formData.opening_book_value} onChange={handleInputChange} required />
-              <FormField label="Depreciation Amount" name="depreciation_amount" type="number" value={formData.depreciation_amount} onChange={handleInputChange} required />
-              <FormField label="Closing Book Value" name="closing_book_value" type="number" value={formData.closing_book_value} onChange={handleInputChange} required />
+              <FormField label="Opening Book Value" name="opening_book_value" type="number" value={formData.opening_book_value} onChange={handleInputChange} required error={fieldErrors.opening_book_value} />
+              <FormField label="Depreciation Amount" name="depreciation_amount" type="number" value={formData.depreciation_amount} onChange={handleInputChange} required error={fieldErrors.depreciation_amount} />
+              <FormField label="Closing Book Value" name="closing_book_value" type="number" value={formData.closing_book_value} onChange={handleInputChange} required error={fieldErrors.closing_book_value} />
             </div>
             
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>

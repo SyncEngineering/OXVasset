@@ -9,7 +9,7 @@ export const getAll = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT d.*, a.asset_code, a.asset_name, a.depreciation_method AS asset_dep_method
       FROM tbl_depreciation_entry d
-      JOIN tbl_asset_master a ON d.asset_id = a.id
+      JOIN tbl_asset_master a ON d.asset_id = a.asset_id
       ORDER BY d.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -23,7 +23,7 @@ export const getById = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT d.*, a.asset_code, a.asset_name, a.depreciation_method AS asset_dep_method
       FROM tbl_depreciation_entry d
-      JOIN tbl_asset_master a ON d.asset_id = a.id
+      JOIN tbl_asset_master a ON d.asset_id = a.asset_id
       WHERE d.id = ?
     `, [req.params.id]);
     
@@ -37,7 +37,7 @@ export const getById = async (req, res, next) => {
 export const getAssetOptions = async (req, res, next) => {
   try {
     const [rows] = await pool.query(`
-      SELECT id, asset_code, asset_name, current_book_value, depreciation_method, depreciation_rate, useful_life_years, purchase_cost, salvage_value
+      SELECT asset_id AS id, asset_code, asset_name, current_book_value, depreciation_method, depreciation_rate, useful_life_years, purchase_cost, salvage_value
       FROM tbl_asset_master
       WHERE is_active = 1 AND asset_status = 'active'
       ORDER BY asset_code
@@ -103,7 +103,7 @@ export const post = async (req, res, next) => {
     
     // Update asset master
     await connection.query(
-      'UPDATE tbl_asset_master SET accumulated_depreciation = accumulated_depreciation + ?, current_book_value = current_book_value - ?, updated_by = "ADMIN" WHERE id = ?',
+      'UPDATE tbl_asset_master SET accumulated_depreciation = accumulated_depreciation + ?, current_book_value = current_book_value - ?, updated_by = "ADMIN" WHERE asset_id = ?',
       [entry.depreciation_amount, entry.depreciation_amount, entry.asset_id]
     );
     
@@ -136,7 +136,7 @@ export const reverse = async (req, res, next) => {
     
     // Reverse asset master update
     await connection.query(
-      'UPDATE tbl_asset_master SET accumulated_depreciation = accumulated_depreciation - ?, current_book_value = current_book_value + ?, updated_by = "ADMIN" WHERE id = ?',
+      'UPDATE tbl_asset_master SET accumulated_depreciation = accumulated_depreciation - ?, current_book_value = current_book_value + ?, updated_by = "ADMIN" WHERE asset_id = ?',
       [entry.depreciation_amount, entry.depreciation_amount, entry.asset_id]
     );
     

@@ -12,7 +12,7 @@ const FixedAssetList = () => {
   const [data, setData] = useState([]);
   const [summary, setSummary] = useState(null);
   const [filters, setFilters] = useState({
-    division_id: '', category_id: '', asset_status: '', from_date: '', to_date: ''
+    division_code: '', category_code: '', asset_status: '', from_date: '', to_date: ''
   });
   const [options, setOptions] = useState({ divisions: [], categories: [] });
   const [loading, setLoading] = useState(false);
@@ -95,8 +95,8 @@ const FixedAssetList = () => {
 
       <div className="form-container filter-bar">
         <div className="form-row">
-          <FormField label="Division" name="division_id" type="select" options={options.divisions.map(d => ({ id: d.id, label: d.division_name }))} value={filters.division_id} onChange={handleInputChange} />
-          <FormField label="Category" name="category_id" type="select" options={options.categories.map(c => ({ id: c.id, label: c.category_name }))} value={filters.category_id} onChange={handleInputChange} />
+          <FormField label="Division" name="division_code" type="select" options={options.divisions.map(d => ({ id: d.division_code, label: d.division_name }))} value={filters.division_code} onChange={handleInputChange} />
+          <FormField label="Category" name="category_code" type="select" options={options.categories.map(c => ({ id: c.category_code, label: c.category_name }))} value={filters.category_code} onChange={handleInputChange} />
           <FormField label="Status" name="asset_status" type="select" options={[
             { id: 'active', label: 'Active' }, { id: 'disposed', label: 'Disposed' }, { id: 'transferred', label: 'Transferred' }, { id: 'wip', label: 'WIP' }, { id: 'scrapped', label: 'Scrapped' }
           ]} value={filters.asset_status} onChange={handleInputChange} />
@@ -106,7 +106,7 @@ const FixedAssetList = () => {
           <FormField label="Purchase To" name="to_date" type="date" value={filters.to_date} onChange={handleInputChange} />
           <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
             <button className="primary" onClick={fetchReport}>Search</button>
-            <button className="secondary" onClick={() => setFilters({ division_id: '', category_id: '', asset_status: '', from_date: '', to_date: '' })}>Clear</button>
+            <button className="secondary" onClick={() => setFilters({ division_code: '', category_code: '', asset_status: '', from_date: '', to_date: '' })}>Clear</button>
             <button className="secondary print-btn" onClick={() => window.print()}>Print</button>
           </div>
         </div>

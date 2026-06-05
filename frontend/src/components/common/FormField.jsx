@@ -31,7 +31,7 @@ const FormField = ({
         >
           <option value="">-- Select --</option>
           {options.map((opt) => (
-            <option key={opt.id} value={opt.id}>
+            <option key={opt.id || opt.value} value={opt.id || opt.value}>
               {opt.label}
             </option>
           ))}
@@ -45,6 +45,22 @@ const FormField = ({
           disabled={disabled}
           rows="3"
         />
+      ) : type === 'radio' ? (
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'center', height: '24px' }}>
+          {options.map((opt) => (
+            <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'normal', margin: 0 }}>
+              <input
+                type="radio"
+                name={name}
+                value={opt.value}
+                checked={String(value) === String(opt.value)}
+                onChange={onChange}
+                disabled={disabled}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
       ) : (
         <input
           id={name}

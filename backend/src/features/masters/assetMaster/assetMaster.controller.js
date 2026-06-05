@@ -16,14 +16,14 @@ export const getAll = async (req, res, next) => {
         sg.sub_group_name,
         l.location_name
       FROM tbl_asset_master a
-      LEFT JOIN tbl_asset_division_master d ON a.division_id = d.id
-      LEFT JOIN tbl_asset_type_master t ON a.asset_type_id = t.id
-      LEFT JOIN tbl_asset_sub_type_master st ON a.asset_sub_type_id = st.id
-      LEFT JOIN tbl_asset_category_master c ON a.category_id = c.id
-      LEFT JOIN tbl_asset_group_master g ON a.group_id = g.id
-      LEFT JOIN tbl_asset_sub_group_master sg ON a.sub_group_id = sg.id
-      LEFT JOIN tbl_location_area_master l ON a.location_id = l.id
-      ORDER BY a.id DESC
+      LEFT JOIN tbl_asset_division_master d ON a.division_code = d.division_code
+      LEFT JOIN tbl_asset_type_master t ON a.type_code = t.type_code
+      LEFT JOIN tbl_asset_sub_type_master st ON a.sub_type_code = st.sub_type_code
+      LEFT JOIN tbl_asset_category_master c ON a.category_code = c.category_code
+      LEFT JOIN tbl_asset_group_master g ON a.group_code = g.group_code
+      LEFT JOIN tbl_asset_sub_group_master sg ON a.sub_group_code = sg.sub_group_code
+      LEFT JOIN tbl_location_area_master l ON a.location_code = l.location_code
+      ORDER BY a.asset_id DESC
     `);
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -44,14 +44,14 @@ export const getById = async (req, res, next) => {
         sg.sub_group_name,
         l.location_name
       FROM tbl_asset_master a
-      LEFT JOIN tbl_asset_division_master d ON a.division_id = d.id
-      LEFT JOIN tbl_asset_type_master t ON a.asset_type_id = t.id
-      LEFT JOIN tbl_asset_sub_type_master st ON a.asset_sub_type_id = st.id
-      LEFT JOIN tbl_asset_category_master c ON a.category_id = c.id
-      LEFT JOIN tbl_asset_group_master g ON a.group_id = g.id
-      LEFT JOIN tbl_asset_sub_group_master sg ON a.sub_group_id = sg.id
-      LEFT JOIN tbl_location_area_master l ON a.location_id = l.id
-      WHERE a.id = ?
+      LEFT JOIN tbl_asset_division_master d ON a.division_code = d.division_code
+      LEFT JOIN tbl_asset_type_master t ON a.type_code = t.type_code
+      LEFT JOIN tbl_asset_sub_type_master st ON a.sub_type_code = st.sub_type_code
+      LEFT JOIN tbl_asset_category_master c ON a.category_code = c.category_code
+      LEFT JOIN tbl_asset_group_master g ON a.group_code = g.group_code
+      LEFT JOIN tbl_asset_sub_group_master sg ON a.sub_group_code = sg.sub_group_code
+      LEFT JOIN tbl_location_area_master l ON a.location_code = l.location_code
+      WHERE a.asset_id = ?
     `, [req.params.id]);
     
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
@@ -63,13 +63,13 @@ export const getById = async (req, res, next) => {
 
 export const getDropdownOptions = async (req, res, next) => {
   try {
-    const [divisions] = await pool.query('SELECT id, division_name AS label FROM tbl_asset_division_master WHERE is_active = 1');
-    const [assetTypes] = await pool.query('SELECT id, type_name AS label FROM tbl_asset_type_master WHERE is_active = 1');
-    const [assetSubTypes] = await pool.query('SELECT id, sub_type_name AS label, asset_type_id FROM tbl_asset_sub_type_master WHERE is_active = 1');
-    const [categories] = await pool.query('SELECT id, category_name AS label FROM tbl_asset_category_master WHERE is_active = 1');
-    const [groups] = await pool.query('SELECT id, group_name AS label, category_id FROM tbl_asset_group_master WHERE is_active = 1');
-    const [subGroups] = await pool.query('SELECT id, sub_group_name AS label, group_id FROM tbl_asset_sub_group_master WHERE is_active = 1');
-    const [locations] = await pool.query('SELECT id, location_name AS label FROM tbl_location_area_master WHERE is_active = 1');
+    const [divisions] = await pool.query('SELECT division_code AS id, division_name AS label FROM tbl_asset_division_master WHERE is_active = 1');
+    const [assetTypes] = await pool.query('SELECT type_code AS id, type_name AS label FROM tbl_asset_type_master WHERE is_active = 1');
+    const [assetSubTypes] = await pool.query('SELECT sub_type_code AS id, sub_type_name AS label, type_code FROM tbl_asset_sub_type_master WHERE is_active = 1');
+    const [categories] = await pool.query('SELECT category_code AS id, category_name AS label FROM tbl_asset_category_master WHERE is_active = 1');
+    const [groups] = await pool.query('SELECT group_code AS id, group_name AS label, category_code FROM tbl_asset_group_master WHERE is_active = 1');
+    const [subGroups] = await pool.query('SELECT sub_group_code AS id, sub_group_name AS label, group_code FROM tbl_asset_sub_group_master WHERE is_active = 1');
+    const [locations] = await pool.query('SELECT location_code AS id, location_name AS label FROM tbl_location_area_master WHERE is_active = 1');
 
     res.json({
       success: true,
@@ -110,7 +110,7 @@ export const update = async (req, res, next) => {
     const current_book_value = (data.purchase_cost || 0) - (data.accumulated_depreciation || 0);
     
     const [result] = await pool.query(
-      'UPDATE tbl_asset_master SET ?, current_book_value = ?, updated_by = ? WHERE id = ?',
+      'UPDATE tbl_asset_master SET ?, current_book_value = ?, updated_by = ? WHERE asset_id = ?',
       [data, current_book_value, 'ADMIN', req.params.id]
     );
     
@@ -124,7 +124,7 @@ export const update = async (req, res, next) => {
 export const updateStatus = async (req, res, next) => {
   try {
     const { asset_status } = req.body;
-    await pool.query('UPDATE tbl_asset_master SET asset_status = ?, updated_by = ? WHERE id = ?', [asset_status, 'ADMIN', req.params.id]);
+    await pool.query('UPDATE tbl_asset_master SET asset_status = ?, updated_by = ? WHERE asset_id = ?', [asset_status, 'ADMIN', req.params.id]);
     res.json({ success: true, message: "Status updated" });
   } catch (error) {
     next(error);
@@ -133,11 +133,11 @@ export const updateStatus = async (req, res, next) => {
 
 export const toggleActive = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT is_active FROM tbl_asset_master WHERE id = ?', [req.params.id]);
+    const [rows] = await pool.query('SELECT is_active FROM tbl_asset_master WHERE asset_id = ?', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
     
     const newStatus = rows[0].is_active ? 0 : 1;
-    await pool.query('UPDATE tbl_asset_master SET is_active = ?, updated_by = ? WHERE id = ?', [newStatus, 'ADMIN', req.params.id]);
+    await pool.query('UPDATE tbl_asset_master SET is_active = ?, updated_by = ? WHERE asset_id = ?', [newStatus, 'ADMIN', req.params.id]);
     
     res.json({ success: true, message: "Active status toggled" });
   } catch (error) {

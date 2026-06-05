@@ -9,7 +9,7 @@ export const getAll = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT d.*, a.asset_code, a.asset_name
       FROM tbl_asset_sale_disposal d
-      JOIN tbl_asset_master a ON d.asset_id = a.id
+      JOIN tbl_asset_master a ON d.asset_id = a.asset_id
       ORDER BY d.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -23,7 +23,7 @@ export const getById = async (req, res, next) => {
     const [rows] = await pool.query(`
       SELECT d.*, a.asset_code, a.asset_name
       FROM tbl_asset_sale_disposal d
-      JOIN tbl_asset_master a ON d.asset_id = a.id
+      JOIN tbl_asset_master a ON d.asset_id = a.asset_id
       WHERE d.id = ?
     `, [req.params.id]);
     
@@ -37,7 +37,7 @@ export const getById = async (req, res, next) => {
 export const getAssetOptions = async (req, res, next) => {
   try {
     const [rows] = await pool.query(`
-      SELECT id, asset_code, asset_name, current_book_value
+      SELECT asset_id AS id, asset_code, asset_name, current_book_value
       FROM tbl_asset_master 
       WHERE is_active = 1 AND asset_status = 'active'
       ORDER BY asset_code
@@ -114,7 +114,7 @@ export const approve = async (req, res, next) => {
       const newStatus = assetStatusMap[entry.disposal_type] || 'disposed';
 
       await connection.query(
-        'UPDATE tbl_asset_master SET asset_status = ?, is_active = 0, updated_by = "ADMIN" WHERE id = ?',
+        'UPDATE tbl_asset_master SET asset_status = ?, is_active = 0, updated_by = "ADMIN" WHERE asset_id = ?',
         [newStatus, entry.asset_id]
       );
     } else if (action === 'approved') {

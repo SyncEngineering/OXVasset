@@ -5,13 +5,33 @@
 -- Standalone: no foreign keys to other modules
 -- ============================================================
 
+DROP TABLE IF EXISTS tbl_company_license_documents;
+DROP TABLE IF EXISTS tbl_expiry_document_entry;
+DROP TABLE IF EXISTS tbl_asset_branch_transfer;
+DROP TABLE IF EXISTS tbl_asset_transfer;
+DROP TABLE IF EXISTS tbl_asset_sale_disposal;
+DROP TABLE IF EXISTS tbl_asset_reclassify;
+DROP TABLE IF EXISTS tbl_depreciation_entry;
+DROP TABLE IF EXISTS tbl_asset_change_wip;
+DROP TABLE IF EXISTS tbl_vehicle_odometer_reset;
+DROP TABLE IF EXISTS tbl_asset_master;
+DROP TABLE IF EXISTS tbl_expiry_document_type;
+DROP TABLE IF EXISTS tbl_common_document_type;
+DROP TABLE IF EXISTS tbl_location_area_master;
+DROP TABLE IF EXISTS tbl_asset_sub_group_master;
+DROP TABLE IF EXISTS tbl_asset_group_master;
+DROP TABLE IF EXISTS tbl_asset_category_master;
+DROP TABLE IF EXISTS tbl_asset_sub_type_master;
+DROP TABLE IF EXISTS tbl_asset_type_master;
+DROP TABLE IF EXISTS tbl_asset_division_master;
+DROP TABLE IF EXISTS tbl_asset_doc_sequence;
+
 -- ------------------------------------------------------------
 -- MASTERS
 -- ------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS tbl_asset_division_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    division_code       VARCHAR(20)     NOT NULL UNIQUE,
+    division_code       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     division_name       VARCHAR(100)    NOT NULL,
     description         VARCHAR(255),
     is_active           TINYINT(1)      NOT NULL DEFAULT 1,
@@ -22,22 +42,27 @@ CREATE TABLE IF NOT EXISTS tbl_asset_division_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_asset_type_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    type_code           VARCHAR(20)     NOT NULL UNIQUE,
-    type_name           VARCHAR(100)    NOT NULL,
-    description         VARCHAR(255),
-    is_active           TINYINT(1)      NOT NULL DEFAULT 1,
-    created_by          VARCHAR(50)     NOT NULL,
-    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by          VARCHAR(50),
-    updated_at          DATETIME        ON UPDATE CURRENT_TIMESTAMP
+    type_code                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    type_prefix                     CHAR(3),
+    type_name                       VARCHAR(100)    NOT NULL,
+    fuel_distance                   INT             DEFAULT 0,
+    jobcard_control_type            VARCHAR(50)     DEFAULT 'Workshop(Movable)',
+    doc_expiry_visible_yn           TINYINT(1)      DEFAULT 1,
+    trailer_trip_calc_base_weight   DECIMAL(10,2)   DEFAULT 0,
+    trip_applicable_yn              TINYINT(1)      DEFAULT 0,
+    asset_single_unit_yn            TINYINT(1)      DEFAULT 1,
+    description                     VARCHAR(255),
+    is_active                       TINYINT(1)      NOT NULL DEFAULT 1,
+    created_by                      VARCHAR(50)     NOT NULL,
+    created_at                      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by                      VARCHAR(50),
+    updated_at                      DATETIME        ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tbl_asset_sub_type_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    sub_type_code       VARCHAR(20)     NOT NULL UNIQUE,
+    sub_type_code       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     sub_type_name       VARCHAR(100)    NOT NULL,
-    asset_type_id       INT UNSIGNED    NOT NULL,
+    type_code           INT UNSIGNED    NOT NULL,
     description         VARCHAR(255),
     is_active           TINYINT(1)      NOT NULL DEFAULT 1,
     created_by          VARCHAR(50)     NOT NULL,
@@ -47,8 +72,7 @@ CREATE TABLE IF NOT EXISTS tbl_asset_sub_type_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_asset_category_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    category_code       VARCHAR(20)     NOT NULL UNIQUE,
+    category_code       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     category_name       VARCHAR(100)    NOT NULL,
     description         VARCHAR(255),
     is_active           TINYINT(1)      NOT NULL DEFAULT 1,
@@ -59,10 +83,9 @@ CREATE TABLE IF NOT EXISTS tbl_asset_category_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_asset_group_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    group_code          VARCHAR(20)     NOT NULL UNIQUE,
+    group_code          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     group_name          VARCHAR(100)    NOT NULL,
-    category_id         INT UNSIGNED    NOT NULL,
+    category_code       INT UNSIGNED    NOT NULL,
     description         VARCHAR(255),
     is_active           TINYINT(1)      NOT NULL DEFAULT 1,
     created_by          VARCHAR(50)     NOT NULL,
@@ -72,10 +95,9 @@ CREATE TABLE IF NOT EXISTS tbl_asset_group_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_asset_sub_group_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    sub_group_code      VARCHAR(20)     NOT NULL UNIQUE,
+    sub_group_code      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     sub_group_name      VARCHAR(100)    NOT NULL,
-    group_id            INT UNSIGNED    NOT NULL,
+    group_code          INT UNSIGNED    NOT NULL,
     description         VARCHAR(255),
     is_active           TINYINT(1)      NOT NULL DEFAULT 1,
     created_by          VARCHAR(50)     NOT NULL,
@@ -85,8 +107,7 @@ CREATE TABLE IF NOT EXISTS tbl_asset_sub_group_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_location_area_master (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    location_code       VARCHAR(20)     NOT NULL UNIQUE,
+    location_code       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     location_name       VARCHAR(100)    NOT NULL,
     address             VARCHAR(255),
     city                VARCHAR(100),
@@ -100,8 +121,7 @@ CREATE TABLE IF NOT EXISTS tbl_location_area_master (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_common_document_type (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    doc_type_code       VARCHAR(20)     NOT NULL UNIQUE,
+    doc_type_code       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     doc_type_name       VARCHAR(100)    NOT NULL,
     description         VARCHAR(255),
     is_mandatory        TINYINT(1)      NOT NULL DEFAULT 0,
@@ -113,8 +133,7 @@ CREATE TABLE IF NOT EXISTS tbl_common_document_type (
 );
 
 CREATE TABLE IF NOT EXISTS tbl_expiry_document_type (
-    id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    doc_type_code       VARCHAR(20)     NOT NULL UNIQUE,
+    expiry_doc_type_code INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     doc_type_name       VARCHAR(100)    NOT NULL,
     description         VARCHAR(255),
     alert_before_days   INT             NOT NULL DEFAULT 30,
@@ -125,18 +144,22 @@ CREATE TABLE IF NOT EXISTS tbl_expiry_document_type (
     updated_at          DATETIME        ON UPDATE CURRENT_TIMESTAMP
 );
 
+-- ------------------------------------------------------------
+-- ASSET MASTER & TRANSACTIONS
+-- ------------------------------------------------------------
+
 CREATE TABLE IF NOT EXISTS tbl_asset_master (
-    id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    asset_id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     asset_code              VARCHAR(30)     NOT NULL UNIQUE,
     asset_name              VARCHAR(150)    NOT NULL,
     description             VARCHAR(500),
-    division_id             INT UNSIGNED    NOT NULL,
-    asset_type_id           INT UNSIGNED    NOT NULL,
-    asset_sub_type_id       INT UNSIGNED,
-    category_id             INT UNSIGNED    NOT NULL,
-    group_id                INT UNSIGNED    NOT NULL,
-    sub_group_id            INT UNSIGNED,
-    location_id             INT UNSIGNED,
+    division_code           INT UNSIGNED    NOT NULL,
+    type_code               INT UNSIGNED    NOT NULL,
+    sub_type_code           INT UNSIGNED,
+    category_code           INT UNSIGNED    NOT NULL,
+    group_code              INT UNSIGNED    NOT NULL,
+    sub_group_code          INT UNSIGNED,
+    location_code           INT UNSIGNED,
     serial_number           VARCHAR(100),
     model_number            VARCHAR(100),
     manufacturer            VARCHAR(150),
@@ -181,11 +204,11 @@ CREATE TABLE IF NOT EXISTS tbl_asset_change_wip (
     status              ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
     approved_by         VARCHAR(50),
     approved_at         DATETIME,
-    remarks             VARCHAR(500),
-    created_by          VARCHAR(50)     NOT NULL,
-    created_at          DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by          VARCHAR(50),
-    updated_at          DATETIME        ON UPDATE CURRENT_TIMESTAMP
+    remarks                 VARCHAR(500),
+    created_by              VARCHAR(50)     NOT NULL,
+    created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by              VARCHAR(50),
+    updated_at              DATETIME        ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tbl_depreciation_entry (
@@ -214,12 +237,12 @@ CREATE TABLE IF NOT EXISTS tbl_asset_reclassify (
     reclassify_no           VARCHAR(30)     NOT NULL UNIQUE,
     reclassify_date         DATE            NOT NULL,
     asset_id                INT UNSIGNED    NOT NULL,
-    old_category_id         INT UNSIGNED    NOT NULL,
-    new_category_id         INT UNSIGNED    NOT NULL,
-    old_group_id            INT UNSIGNED,
-    new_group_id            INT UNSIGNED,
-    old_sub_group_id        INT UNSIGNED,
-    new_sub_group_id        INT UNSIGNED,
+    old_category_code       INT UNSIGNED    NOT NULL,
+    new_category_code       INT UNSIGNED    NOT NULL,
+    old_group_code          INT UNSIGNED,
+    new_group_code          INT UNSIGNED,
+    old_sub_group_code      INT UNSIGNED,
+    new_sub_group_code      INT UNSIGNED,
     reason                  VARCHAR(500),
     status                  ENUM('draft','approved','rejected') NOT NULL DEFAULT 'draft',
     approved_by             VARCHAR(50),
@@ -256,10 +279,10 @@ CREATE TABLE IF NOT EXISTS tbl_asset_transfer (
     transfer_no             VARCHAR(30)     NOT NULL UNIQUE,
     transfer_date           DATE            NOT NULL,
     asset_id                INT UNSIGNED    NOT NULL,
-    from_division_id        INT UNSIGNED    NOT NULL,
-    to_division_id          INT UNSIGNED    NOT NULL,
-    from_location_id        INT UNSIGNED,
-    to_location_id          INT UNSIGNED,
+    from_division_code      INT UNSIGNED    NOT NULL,
+    to_division_code        INT UNSIGNED    NOT NULL,
+    from_location_code      INT UNSIGNED,
+    to_location_code        INT UNSIGNED,
     reason                  VARCHAR(500),
     status                  ENUM('draft','approved','completed','rejected') NOT NULL DEFAULT 'draft',
     approved_by             VARCHAR(50),
@@ -277,8 +300,8 @@ CREATE TABLE IF NOT EXISTS tbl_asset_branch_transfer (
     asset_id                INT UNSIGNED    NOT NULL,
     from_branch             VARCHAR(100)    NOT NULL,
     to_branch               VARCHAR(100)    NOT NULL,
-    from_location_id        INT UNSIGNED,
-    to_location_id          INT UNSIGNED,
+    from_location_code      INT UNSIGNED,
+    to_location_code        INT UNSIGNED,
     reason                  VARCHAR(500),
     status                  ENUM('draft','approved','completed','rejected') NOT NULL DEFAULT 'draft',
     approved_by             VARCHAR(50),
@@ -293,7 +316,7 @@ CREATE TABLE IF NOT EXISTS tbl_expiry_document_entry (
     id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     entry_no                VARCHAR(30)     NOT NULL UNIQUE,
     asset_id                INT UNSIGNED    NOT NULL,
-    doc_type_id             INT UNSIGNED    NOT NULL,
+    expiry_doc_type_code    INT UNSIGNED    NOT NULL,
     document_no             VARCHAR(100),
     issue_date              DATE,
     expiry_date             DATE            NOT NULL,
@@ -311,7 +334,7 @@ CREATE TABLE IF NOT EXISTS tbl_expiry_document_entry (
 CREATE TABLE IF NOT EXISTS tbl_company_license_documents (
     id                      INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     entry_no                VARCHAR(30)     NOT NULL UNIQUE,
-    doc_type_id             INT UNSIGNED    NOT NULL,
+    expiry_doc_type_code    INT UNSIGNED    NOT NULL,
     document_no             VARCHAR(100),
     document_name           VARCHAR(150)    NOT NULL,
     issue_date              DATE,
@@ -346,10 +369,10 @@ INSERT IGNORE INTO tbl_asset_doc_sequence (doc_type, prefix, last_sequence, fisc
 ('EXPIRY_DOC',          'EXP',  0, '2025-26'),
 ('COMPANY_LICENSE',     'LIC',  0, '2025-26');
 
-CREATE INDEX idx_asset_master_division    ON tbl_asset_master (division_id);
-CREATE INDEX idx_asset_master_category    ON tbl_asset_master (category_id);
+CREATE INDEX idx_asset_master_division    ON tbl_asset_master (division_code);
+CREATE INDEX idx_asset_master_category    ON tbl_asset_master (category_code);
 CREATE INDEX idx_asset_master_status      ON tbl_asset_master (asset_status);
-CREATE INDEX idx_asset_master_location    ON tbl_asset_master (location_id);
+CREATE INDEX idx_asset_master_location    ON tbl_asset_master (location_code);
 CREATE INDEX idx_depreciation_asset       ON tbl_depreciation_entry (asset_id);
 CREATE INDEX idx_depreciation_period      ON tbl_depreciation_entry (period_from, period_to);
 CREATE INDEX idx_transfer_asset           ON tbl_asset_transfer (asset_id);
