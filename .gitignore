@@ -3,3 +3,5 @@ GEMINI.md
 node_modules
 assets_schema.sql
 plan
+*.svg
+*.puml

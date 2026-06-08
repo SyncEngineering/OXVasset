@@ -21,7 +21,7 @@ const pool = mysql.createPool({
 // Test connection on startup
 pool.getConnection()
   .then(conn => {
-    console.log('Database connected successfully');
+    console.log('KSRTC Asset Management System — Database connected successfully');
     conn.release();
   })
   .catch(err => {

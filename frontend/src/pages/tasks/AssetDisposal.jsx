@@ -163,7 +163,7 @@ const AssetDisposal = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Sale / Disposal</div>
+        <div className="header-title">KSRTC — Bus Disposal / Scrapping</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
@@ -184,7 +184,7 @@ const AssetDisposal = () => {
               <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
               <FormField label="Date" name="disposal_date" type="date" value={formData.disposal_date} onChange={handleInputChange} required error={fieldErrors.disposal_date} />
               <FormField label="Type" name="disposal_type" type="select" options={[
-                { id: 'sale', label: 'Sale' }, { id: 'scrap', label: 'Scrap' }, { id: 'donation', label: 'Donation' }, { id: 'write_off', label: 'Write Off' }
+                { id: 'sale', label: 'Auction / Sale' }, { id: 'scrap', label: 'Scrap / Condemn' }, { id: 'donation', label: 'Donation' }, { id: 'write_off', label: 'Write-Off' }
               ]} value={formData.disposal_type} onChange={handleInputChange} required error={fieldErrors.disposal_type} />
             </div>
             

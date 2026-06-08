@@ -93,7 +93,7 @@ const CompanyLicenseList = () => {
       </style>
       
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Company License Report</div>
+        <div className="header-title">KSRTC — Corporation License List</div>
       </div>
 
       <div className="form-container filter-bar">

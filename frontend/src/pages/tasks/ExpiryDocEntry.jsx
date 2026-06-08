@@ -156,7 +156,7 @@ const ExpiryDocEntry = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Expiry Documents</div>
+        <div className="header-title">KSRTC — Bus Document Entry</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>

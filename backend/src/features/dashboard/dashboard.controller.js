@@ -57,13 +57,17 @@ export const getDashboardStats = async (req, res, next) => {
       AND DATEDIFF(e.expiry_date, CURDATE()) BETWEEN 0 AND dt.alert_before_days
     `);
 
+    // 6. Pending Depreciation Entries
+    const pendingDepr = await runQuery("SELECT COUNT(*) as count FROM tbl_depreciation_entry WHERE status = 'draft'");
+
     res.json({
       success: true,
       data: {
         summary: [
-          { label: 'Total Assets', value: totalAssets[0]?.count || 0 },
-          { label: 'Active Assets', value: activeAssets[0]?.count || 0 },
-          { label: 'Expiring Documents', value: expiringDocs[0]?.count || 0 }
+          { label: 'Total Registered Assets', value: totalAssets[0]?.count || 0 },
+          { label: 'Buses / Equipment In Service', value: activeAssets[0]?.count || 0 },
+          { label: 'Pending Depreciation Entries', value: pendingDepr[0]?.count || 0 },
+          { label: 'Documents Expiring Within 30 Days', value: expiringDocs[0]?.count || 0 }
         ],
         charts: {
           assetsByCategory: assetsByCategory.length > 0 ? assetsByCategory : [{ label: 'None', value: 0 }],

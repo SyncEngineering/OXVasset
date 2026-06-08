@@ -6,7 +6,7 @@ import React from 'react';
 const Header = ({ title }) => {
   return (
     <header className="header">
-      <div className="header-title">OXIVE ERP - ASSETS MODULE</div>
+      <div className="header-title">KSRTC — Asset Management System</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         <span style={{ fontSize: '12px' }}>{title}</span>
         <button className="secondary" style={{ padding: '2px 8px' }}>Logout</button>

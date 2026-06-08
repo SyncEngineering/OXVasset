@@ -187,7 +187,7 @@ const Dashboard = () => {
       `}</style>
 
       <h2 style={{ fontSize: '16px', marginBottom: '15px', color: '#003399' }}>
-        ASSETS MODULE - Dashboard
+        KSRTC Asset Management System — Dashboard
       </h2>
 
       {error && (

@@ -84,7 +84,7 @@ const AssetManagement = () => {
       </style>
       
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Management Overview</div>
+        <div className="header-title">KSRTC — Asset Management Report</div>
       </div>
 
       <div className="form-container filter-bar">

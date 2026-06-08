@@ -93,7 +93,7 @@ const AssetTransfer = () => {
     setError('');
     setFieldErrors({});
     if (parseInt(formData.to_division_code) === parseInt(formData.from_division_code)) {
-      setError('Target division must be different from source division');
+      setError('Target depot must be different from source depot');
       return;
     }
     try {
@@ -116,7 +116,7 @@ const AssetTransfer = () => {
   };
 
   const handleApproveAction = async (id, action) => {
-    const msg = action === 'completed' ? 'Complete transfer? This will update asset location/division.' : `${action} this entry?`;
+    const msg = action === 'completed' ? 'Complete transfer? This will update asset location/depot.' : `${action} this entry?`;
     if (!window.confirm(msg)) return;
     try {
       await api.approve(id, action);
@@ -161,8 +161,8 @@ const AssetTransfer = () => {
     { key: 'transfer_no', label: 'No', width: '100px' },
     { key: 'asset_code', label: 'Asset', width: '100px' },
     { key: 'date_display', label: 'Date', width: '100px' },
-    { key: 'from_division_name', label: 'From Div', width: '120px' },
-    { key: 'to_division_name', label: 'To Div', width: '120px' },
+    { key: 'from_division_name', label: 'From Depot', width: '120px' },
+    { key: 'to_division_name', label: 'To Depot', width: '120px' },
     { key: 'status_display', label: 'Status', width: '100px' }
   ];
 
@@ -185,7 +185,7 @@ const AssetTransfer = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">Asset Transfer (Division)</div>
+        <div className="header-title">KSRTC — Inter-Depot Bus Transfer</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
@@ -212,12 +212,12 @@ const AssetTransfer = () => {
             <div className="form-row">
               <div style={{ flex: 1, padding: '10px', borderRight: '1px solid #ddd' }}>
                 <p><strong>From (Auto-filled)</strong></p>
-                <p>Division: {fromLabels.division}</p>
+                <p>Depot: {fromLabels.division}</p>
                 <p>Location: {fromLabels.location}</p>
               </div>
               <div style={{ flex: 1, padding: '10px' }}>
                 <p><strong>To (Target)</strong></p>
-                <FormField label="To Division" name="to_division_code" type="select" options={divisionOptions} value={formData.to_division_code} onChange={handleInputChange} required error={fieldErrors.to_division_code} />
+                <FormField label="To Depot" name="to_division_code" type="select" options={divisionOptions} value={formData.to_division_code} onChange={handleInputChange} required error={fieldErrors.to_division_code} />
                 <FormField label="To Location" name="to_location_code" type="select" options={locationOptions} value={formData.to_location_code} onChange={handleInputChange} error={fieldErrors.to_location_code} />
               </div>
             </div>
