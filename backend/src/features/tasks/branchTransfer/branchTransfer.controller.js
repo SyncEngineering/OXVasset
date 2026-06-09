@@ -12,9 +12,9 @@ export const getAll = async (req, res, next) => {
         fl.location_name AS from_location_name,
         tl.location_name AS to_location_name
       FROM tbl_asset_branch_transfer bt
-      JOIN tbl_asset_master a ON bt.asset_id = a.id
-      LEFT JOIN tbl_location_area_master fl ON bt.from_location_id = fl.id
-      LEFT JOIN tbl_location_area_master tl ON bt.to_location_id = tl.id
+      JOIN tbl_asset_master a ON bt.asset_id = a.asset_id
+      LEFT JOIN tbl_location_area_master fl ON bt.from_location_code = fl.location_code
+      LEFT JOIN tbl_location_area_master tl ON bt.to_location_code = tl.location_code
       ORDER BY bt.id DESC
     `);
     res.json({ success: true, data: rows });
@@ -31,9 +31,9 @@ export const getById = async (req, res, next) => {
         fl.location_name AS from_location_name,
         tl.location_name AS to_location_name
       FROM tbl_asset_branch_transfer bt
-      JOIN tbl_asset_master a ON bt.asset_id = a.id
-      LEFT JOIN tbl_location_area_master fl ON bt.from_location_id = fl.id
-      LEFT JOIN tbl_location_area_master tl ON bt.to_location_id = tl.id
+      JOIN tbl_asset_master a ON bt.asset_id = a.asset_id
+      LEFT JOIN tbl_location_area_master fl ON bt.from_location_code = fl.location_code
+      LEFT JOIN tbl_location_area_master tl ON bt.to_location_code = tl.location_code
       WHERE bt.id = ?
     `, [req.params.id]);
     
@@ -47,7 +47,7 @@ export const getById = async (req, res, next) => {
 export const getAssetOptions = async (req, res, next) => {
   try {
     const [rows] = await pool.query(`
-      SELECT id, asset_code, asset_name 
+      SELECT asset_id AS id, asset_code, asset_name 
       FROM tbl_asset_master 
       WHERE is_active = 1 AND asset_status = 'active'
       ORDER BY asset_code
@@ -60,21 +60,36 @@ export const getAssetOptions = async (req, res, next) => {
 
 export const getLocationOptions = async (req, res, next) => {
   try {
-    const [rows] = await pool.query('SELECT id, location_name AS name FROM tbl_location_area_master WHERE is_active = 1');
+    const [rows] = await pool.query('SELECT location_code AS id, location_name AS name FROM tbl_location_area_master WHERE is_active = 1');
     res.json({ success: true, data: rows });
   } catch (error) {
     next(error);
   }
 };
 
+const VALID_BRANCH_TRANSFER_FIELDS = [
+  'transfer_date', 'asset_id', 'from_branch', 'to_branch', 
+  'from_location_code', 'to_location_code', 'reason', 'remarks'
+];
+
+const filterBranchTransferData = (data) => {
+  const filtered = {};
+  VALID_BRANCH_TRANSFER_FIELDS.forEach(field => {
+    if (data[field] !== undefined) {
+      filtered[field] = data[field] === '' ? null : data[field];
+    }
+  });
+  return filtered;
+};
+
 export const create = async (req, res, next) => {
   try {
     const branch_transfer_no = await generateDocNumber(pool, 'BRANCH_TRANSFER');
-    const data = req.body;
+    const sanitizedData = filterBranchTransferData(req.body);
     
     const [result] = await pool.query(
       'INSERT INTO tbl_asset_branch_transfer SET ?, branch_transfer_no = ?, status = "draft", created_by = "ADMIN"',
-      [data, branch_transfer_no]
+      [sanitizedData, branch_transfer_no]
     );
     
     res.status(201).json({ success: true, message: "Branch transfer entry created", id: result.insertId, branch_transfer_no });
@@ -86,7 +101,7 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const data = req.body;
+    const sanitizedData = filterBranchTransferData(req.body);
 
     const [rows] = await pool.query('SELECT status FROM tbl_asset_branch_transfer WHERE id = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
@@ -94,7 +109,7 @@ export const update = async (req, res, next) => {
 
     await pool.query(
       'UPDATE tbl_asset_branch_transfer SET ?, updated_by = "ADMIN" WHERE id = ?',
-      [data, id]
+      [sanitizedData, id]
     );
     
     res.json({ success: true, message: "Branch transfer entry updated" });
@@ -122,8 +137,8 @@ export const approve = async (req, res, next) => {
       );
       
       await connection.query(
-        'UPDATE tbl_asset_master SET location_id = ?, updated_by = "ADMIN" WHERE id = ?',
-        [entry.to_location_id, entry.asset_id]
+        'UPDATE tbl_asset_master SET location_code = ?, updated_by = "ADMIN" WHERE asset_id = ?',
+        [entry.to_location_code, entry.asset_id]
       );
     } else {
       await connection.query(

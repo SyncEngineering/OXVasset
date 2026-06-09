@@ -86,14 +86,29 @@ export const getLocationOptions = async (req, res, next) => {
   }
 };
 
+const VALID_TRANSFER_FIELDS = [
+  'transfer_date', 'asset_id', 'from_division_code', 'to_division_code', 
+  'from_location_code', 'to_location_code', 'reason', 'remarks'
+];
+
+const filterTransferData = (data) => {
+  const filtered = {};
+  VALID_TRANSFER_FIELDS.forEach(field => {
+    if (data[field] !== undefined) {
+      filtered[field] = data[field] === '' ? null : data[field];
+    }
+  });
+  return filtered;
+};
+
 export const create = async (req, res, next) => {
   try {
     const transfer_no = await generateDocNumber(pool, 'TRANSFER');
-    const data = req.body;
+    const sanitizedData = filterTransferData(req.body);
     
     const [result] = await pool.query(
       'INSERT INTO tbl_asset_transfer SET ?, transfer_no = ?, status = "draft", created_by = "ADMIN"',
-      [data, transfer_no]
+      [sanitizedData, transfer_no]
     );
     
     res.status(201).json({ success: true, message: "Transfer entry created", id: result.insertId, transfer_no });
@@ -105,7 +120,7 @@ export const create = async (req, res, next) => {
 export const update = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const data = req.body;
+    const sanitizedData = filterTransferData(req.body);
 
     const [rows] = await pool.query('SELECT status FROM tbl_asset_transfer WHERE id = ?', [id]);
     if (rows.length === 0) return res.status(404).json({ success: false, message: 'Not found' });
@@ -113,7 +128,7 @@ export const update = async (req, res, next) => {
 
     await pool.query(
       'UPDATE tbl_asset_transfer SET ?, updated_by = "ADMIN" WHERE id = ?',
-      [data, id]
+      [sanitizedData, id]
     );
     
     res.json({ success: true, message: "Transfer entry updated" });

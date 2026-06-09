@@ -88,14 +88,41 @@ export const getDropdownOptions = async (req, res, next) => {
   }
 };
 
+const VALID_ASSET_FIELDS = [
+  'asset_code', 'asset_name', 'description', 'division_code', 'type_code', 'sub_type_code',
+  'category_code', 'group_code', 'sub_group_code', 'location_code', 'serial_number',
+  'model_number', 'manufacturer', 'purchase_date', 'purchase_cost', 'salvage_value',
+  'useful_life_years', 'depreciation_method', 'depreciation_rate',
+  'accumulated_depreciation', 'barcode', 'qr_code', 'asset_status', 'is_active', 'remarks'
+];
+
+const filterAssetData = (data) => {
+  const filtered = {};
+  VALID_ASSET_FIELDS.forEach(field => {
+    if (data[field] !== undefined) {
+      // Convert empty strings to null for numeric/date/foreign key fields
+      if (data[field] === '' && [
+        'division_code', 'type_code', 'sub_type_code', 'category_code', 'group_code', 
+        'sub_group_code', 'location_code', 'purchase_cost', 'salvage_value', 
+        'useful_life_years', 'depreciation_rate', 'accumulated_depreciation', 'purchase_date'
+      ].includes(field)) {
+        filtered[field] = null;
+      } else {
+        filtered[field] = data[field];
+      }
+    }
+  });
+  return filtered;
+};
+
 export const create = async (req, res, next) => {
   try {
-    const data = req.body;
-    const current_book_value = (data.purchase_cost || 0) - (data.accumulated_depreciation || 0);
+    const sanitizedData = filterAssetData(req.body);
+    const current_book_value = (parseFloat(sanitizedData.purchase_cost) || 0) - (parseFloat(sanitizedData.accumulated_depreciation) || 0);
     
     const [result] = await pool.query(
       'INSERT INTO tbl_asset_master SET ?, current_book_value = ?, created_by = ?',
-      [data, current_book_value, 'ADMIN']
+      [sanitizedData, current_book_value, 'ADMIN']
     );
     
     res.status(201).json({ success: true, message: "Asset created", id: result.insertId });
@@ -106,12 +133,12 @@ export const create = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const data = req.body;
-    const current_book_value = (data.purchase_cost || 0) - (data.accumulated_depreciation || 0);
+    const sanitizedData = filterAssetData(req.body);
+    const current_book_value = (parseFloat(sanitizedData.purchase_cost) || 0) - (parseFloat(sanitizedData.accumulated_depreciation) || 0);
     
     const [result] = await pool.query(
       'UPDATE tbl_asset_master SET ?, current_book_value = ?, updated_by = ? WHERE asset_id = ?',
-      [data, current_book_value, 'ADMIN', req.params.id]
+      [sanitizedData, current_book_value, 'ADMIN', req.params.id]
     );
     
     if (result.affectedRows === 0) return res.status(404).json({ success: false, message: 'Not found' });
