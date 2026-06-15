@@ -47,7 +47,7 @@ const DepreciationEntry = () => {
   const handleAssetSelect = (e) => {
     const assetId = e.target.value;
     const { name } = e.target;
-    const asset = assetOptions.find(a => a.asset_id === parseInt(assetId));
+    const asset = assetOptions.find(a => a.id === parseInt(assetId));
     
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }));
@@ -233,7 +233,7 @@ const DepreciationEntry = () => {
             <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Entry Details</div>
             <div className="form-row">
               <FormField label="Asset" name="asset_id" type="select" 
-                options={assetOptions.map(a => ({ id: a.asset_id, label: `${a.asset_code} — ${a.asset_name}` }))} 
+                options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} - ${a.asset_name}` }))} 
                 value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
               <FormField label="Entry Date" name="entry_date" type="date" value={formData.entry_date} onChange={handleInputChange} required error={fieldErrors.entry_date} />
               <FormField label="Period From" name="period_from" type="date" value={formData.period_from} onChange={handleInputChange} required error={fieldErrors.period_from} />
