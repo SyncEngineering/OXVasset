@@ -143,7 +143,7 @@ const BranchTransfer = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Branch / Workshop Transfer</div>
+        <div className="header-title">KSRTC Branch / Workshop Transfer</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>

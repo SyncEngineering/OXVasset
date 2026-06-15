@@ -90,7 +90,7 @@ const FixedAssetList = () => {
       </style>
       
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Fixed Asset Register</div>
+        <div className="header-title">KSRTC Fixed Asset Register</div>
       </div>
 
       <div className="form-container filter-bar">

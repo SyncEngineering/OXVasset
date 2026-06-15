@@ -147,7 +147,7 @@ const CompanyLicense = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Corporation License Documents</div>
+        <div className="header-title">KSRTC Corporation License Documents</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>

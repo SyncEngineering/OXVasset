@@ -160,7 +160,7 @@ const AssetChangeWip = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Asset Change WIP</div>
+        <div className="header-title">KSRTC Asset Change WIP</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>

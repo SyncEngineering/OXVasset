@@ -76,7 +76,7 @@ const AssetSummaryDepreciation = () => {
       </style>
       
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Depreciation Summary Report</div>
+        <div className="header-title">KSRTC Depreciation Summary Report</div>
       </div>
 
       <div className="form-container filter-bar">

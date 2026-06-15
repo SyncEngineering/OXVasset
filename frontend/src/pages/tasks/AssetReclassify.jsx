@@ -206,7 +206,7 @@ const AssetReclassify = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Asset Reclassify</div>
+        <div className="header-title">KSRTC Asset Reclassify</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
@@ -225,14 +225,14 @@ const AssetReclassify = () => {
         <div className="form-container">
           <div className="form-section-title">Reclassify Details</div>
           <form onSubmit={handleSave}>
-            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Asset & Date</div>
+            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 - Asset & Date</div>
             <div className="form-row">
               <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleAssetSelect} required disabled={!!editId} error={fieldErrors.asset_id} />
               <FormField label="Date" name="reclassify_date" type="date" value={formData.reclassify_date} onChange={handleInputChange} required error={fieldErrors.reclassify_date} />
               <FormField label="Reason" name="reason" type="textarea" value={formData.reason} onChange={handleInputChange} error={fieldErrors.reason} />
             </div>
 
-            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 — Reclassification</div>
+            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 - Reclassification</div>
             <div className="form-row">
               <div style={{ flex: 1, padding: '10px', borderRight: '1px solid #ddd' }}>
                 <p><strong>Old Classification (Read-only)</strong></p>

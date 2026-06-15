@@ -154,7 +154,7 @@ const AssetBarcode = () => {
       `}</style>
 
       <div className="header no-print" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Asset Barcode Labels</div>
+        <div className="header-title">KSRTC Asset Barcode Labels</div>
       </div>
 
       <div className="form-container no-print" style={{ marginBottom: '20px' }}>

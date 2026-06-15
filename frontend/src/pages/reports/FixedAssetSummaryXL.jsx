@@ -47,7 +47,7 @@ const FixedAssetSummaryXL = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Asset Register Export (XL)</div>
+        <div className="header-title">KSRTC Asset Register Export (XL)</div>
       </div>
 
       <div className="form-container">

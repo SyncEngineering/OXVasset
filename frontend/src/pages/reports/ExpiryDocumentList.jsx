@@ -123,7 +123,7 @@ const ExpiryDocumentList = () => {
       `}</style>
 
       <div className="header no-print" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Bus Document Expiry List</div>
+        <div className="header-title">KSRTC Bus Document Expiry List</div>
       </div>
 
       <div className="report-header" style={{ display: 'none', textAlign: 'center' }}>

@@ -114,7 +114,7 @@ const AssetSubGroupMaster = () => {
   return (
     <div className="asset-sub-group-master">
       <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
-        <span style={{ fontWeight: 'bold' }}>KSRTC — Asset Sub Group Master</span>
+        <span style={{ fontWeight: 'bold' }}>KSRTC Asset Sub Group Master</span>
       </div>
 
       <div className="form-container" style={{ marginTop: '10px' }}>

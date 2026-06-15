@@ -204,7 +204,7 @@ const DepreciationEntry = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Depreciation Entry</div>
+        <div className="header-title">KSRTC Depreciation Entry</div>
       </div>
 
       <div className="form-container" style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap' }}>
@@ -228,9 +228,9 @@ const DepreciationEntry = () => {
 
       {showForm && (
         <div className="form-container">
-          <div className="form-section-title">{editId ? `Edit Entry — ${formData.entry_no}` : 'New Depreciation Entry'}</div>
+          <div className="form-section-title">{editId ? `Edit Entry - ${formData.entry_no}` : 'New Depreciation Entry'}</div>
           <form onSubmit={handleSave}>
-            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 — Entry Details</div>
+            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 1 - Entry Details</div>
             <div className="form-row">
               <FormField label="Asset" name="asset_id" type="select" 
                 options={assetOptions.map(a => ({ id: a.id, label: `${a.asset_code} - ${a.asset_name}` }))} 
@@ -246,7 +246,7 @@ const DepreciationEntry = () => {
               <FormField label="Remarks" name="remarks" type="textarea" value={formData.remarks} onChange={handleInputChange} error={fieldErrors.remarks} />
             </div>
 
-            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 — Calculation</div>
+            <div className="form-section-title" style={{ background: '#eee', color: '#333' }}>Section 2 - Calculation</div>
             <div className="form-row">
               <FormField label="Opening Book Value" name="opening_book_value" type="number" value={formData.opening_book_value} onChange={handleInputChange} required error={fieldErrors.opening_book_value} />
               <FormField label="Depreciation Amount" name="depreciation_amount" type="number" value={formData.depreciation_amount} onChange={handleInputChange} required error={fieldErrors.depreciation_amount} />

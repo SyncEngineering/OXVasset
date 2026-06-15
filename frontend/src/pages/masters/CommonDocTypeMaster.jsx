@@ -114,7 +114,7 @@ const CommonDocTypeMaster = () => {
   return (
     <div className="common-doc-type-master">
       <div className="header" style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: '#1c5ad6', color: 'white', padding: '5px 10px' }}>
-        <span style={{ fontWeight: 'bold' }}>KSRTC — Common Document Type</span>
+        <span style={{ fontWeight: 'bold' }}>KSRTC Common Document Type</span>
       </div>
 
       <div className="form-container" style={{ marginTop: '10px' }}>

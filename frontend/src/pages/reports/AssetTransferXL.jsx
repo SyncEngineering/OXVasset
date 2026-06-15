@@ -26,7 +26,7 @@ const AssetTransferXL = () => {
   return (
     <div>
       <div className="header" style={{ marginBottom: '10px' }}>
-        <div className="header-title">KSRTC — Inter-Depot Transfer Export (XL)</div>
+        <div className="header-title">KSRTC Inter-Depot Transfer Export (XL)</div>
       </div>
 
       <div className="form-container">
