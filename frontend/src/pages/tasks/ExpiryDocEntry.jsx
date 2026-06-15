@@ -52,7 +52,7 @@ const ExpiryDocEntry = () => {
     }
 
     if (name === 'expiry_doc_type_code') {
-      const doc = docOptions.find(d => d.expiry_doc_type_code === parseInt(value));
+      const doc = docOptions.find(d => d.id === parseInt(value));
       setSelectedDocOptions(doc);
     }
   };
@@ -109,7 +109,7 @@ const ExpiryDocEntry = () => {
         remarks: clean.remarks || ''
     });
     setEditId(row.id);
-    setSelectedDocOptions(docOptions.find(d => d.expiry_doc_type_code === row.expiry_doc_type_code));
+    setSelectedDocOptions(docOptions.find(d => d.id === row.expiry_doc_type_code));
     setFieldErrors({});
     setShowForm(true);
   };
@@ -168,8 +168,8 @@ const ExpiryDocEntry = () => {
           <div className="form-section-title">{editId ? 'Edit Document' : 'New Document Entry'}</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.asset_id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required error={fieldErrors.asset_id} />
-              <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.expiry_doc_type_code, label: d.doc_type_name }))} value={formData.expiry_doc_type_code} onChange={handleInputChange} required error={fieldErrors.expiry_doc_type_code} />
+              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required error={fieldErrors.asset_id} />
+              <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.id, label: d.doc_type_name }))} value={formData.expiry_doc_type_code} onChange={handleInputChange} required error={fieldErrors.expiry_doc_type_code} />
               {selectedDocInfo && (
                 <div style={{ fontSize: '11px', color: '#666', marginTop: '15px' }}>
                   Alert defined at {selectedDocInfo.alert_before_days} days.

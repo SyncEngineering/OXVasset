@@ -162,7 +162,7 @@ const BranchTransfer = () => {
           <div className="form-section-title">Transfer Details</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.asset_id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required disabled={!!editId} error={fieldErrors.asset_id} />
+              <FormField label="Asset" name="asset_id" type="select" options={assetOptions.map(a => ({ id: a.id, label: a.asset_code }))} value={formData.asset_id} onChange={handleInputChange} required disabled={!!editId} error={fieldErrors.asset_id} />
               <FormField label="Date" name="transfer_date" type="date" value={formData.transfer_date} onChange={handleInputChange} required error={fieldErrors.transfer_date} />
               <FormField label="From Branch" name="from_branch" value={formData.from_branch} onChange={handleInputChange} required error={fieldErrors.from_branch} />
               <FormField label="To Branch" name="to_branch" value={formData.to_branch} onChange={handleInputChange} required error={fieldErrors.to_branch} />

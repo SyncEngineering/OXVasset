@@ -159,7 +159,7 @@ const CompanyLicense = () => {
           <div className="form-section-title">{editId ? 'Edit License' : 'New License Entry'}</div>
           <form onSubmit={handleSave}>
             <div className="form-row">
-              <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.expiry_doc_type_code, label: d.doc_type_name }))} value={formData.expiry_doc_type_code} onChange={handleInputChange} required error={fieldErrors.expiry_doc_type_code} />
+              <FormField label="Doc Type" name="expiry_doc_type_code" type="select" options={docOptions.map(d => ({ id: d.id, label: d.doc_type_name }))} value={formData.expiry_doc_type_code} onChange={handleInputChange} required error={fieldErrors.expiry_doc_type_code} />
               <FormField label="Document Name" name="document_name" value={formData.document_name} onChange={handleInputChange} required error={fieldErrors.document_name} />
               <FormField label="Document No" name="document_no" value={formData.document_no} onChange={handleInputChange} error={fieldErrors.document_no} />
             </div>
