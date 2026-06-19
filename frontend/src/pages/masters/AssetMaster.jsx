@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/masters/assetMasterApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
 import Table from '../../components/common/Table.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
@@ -89,12 +88,6 @@ const AssetMaster = () => {
     if (name === 'type_code') setFormData(prev => ({ ...prev, sub_type_code: '' }));
     if (name === 'category_code') setFormData(prev => ({ ...prev, group_code: '', sub_group_code: '' }));
     if (name === 'group_code') setFormData(prev => ({ ...prev, sub_group_code: '' }));
-  };
-
-  const handleFillDummy = () => {
-    const dummy = getDummyData('AssetMaster');
-    setFormData(prev => ({ ...prev, ...dummy }));
-    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
@@ -255,7 +248,6 @@ const AssetMaster = () => {
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button type="submit" className="primary">Save Asset</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
               <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </form>

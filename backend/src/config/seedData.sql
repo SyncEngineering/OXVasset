@@ -56,3 +56,14 @@ INSERT IGNORE INTO tbl_asset_master (asset_code, asset_name, division_code, type
 ('BUS-742', 'Ashok Leyland — Fast Passenger', 2, 2, 2, 2, 1, '2023-01-15', 3500000.00, 10, 3200000.00, 'active', 'ADMIN'),
 ('ETM-102', 'Android Ticket Machine v2', 1, 1, 1, 1, 1, '2022-06-10', 15000.00, 3, 8000.00, 'active', 'ADMIN'),
 ('FUR-055', 'Depot Master Table', 3, 3, 3, 1, 2, '2024-02-20', 5000.00, 5, 5000.00, 'wip', 'ADMIN');
+
+-- 11. Document Sequences
+INSERT IGNORE INTO tbl_asset_doc_sequence (doc_type, prefix, last_sequence, fiscal_year) VALUES
+('ASSET',               'AST',  0, '2025-26'),
+('DEPRECIATION',        'DEP',  0, '2025-26'),
+('RECLASSIFY',          'RCL',  0, '2025-26'),
+('DISPOSAL',            'DIS',  0, '2025-26'),
+('TRANSFER',            'TRF',  0, '2025-26'),
+('BRANCH_TRANSFER',     'BTR',  0, '2025-26'),
+('EXPIRY_DOC',          'EXP',  0, '2025-26'),
+('COMPANY_LICENSE',     'LIC',  0, '2025-26');

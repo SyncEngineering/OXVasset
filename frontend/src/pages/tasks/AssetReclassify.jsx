@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import * as api from '../../api/tasks/assetReclassifyApi';
-import { getDummyData } from '../../utils/dummyDataGenerator';
 import FormField from '../../components/common/FormField.jsx';
 import Table from '../../components/common/Table.jsx';
 import StatusBadge from '../../components/common/StatusBadge.jsx';
@@ -100,12 +99,6 @@ const AssetReclassify = () => {
       setFilteredSubGroups(subGroupOptions.filter(s => s.group_code === parseInt(value)));
       setFormData(prev => ({ ...prev, new_sub_group_code: '' }));
     }
-  };
-
-  const handleFillDummy = () => {
-    const dummy = getDummyData('AssetReclassify');
-    setFormData(prev => ({ ...prev, ...dummy }));
-    setFieldErrors({});
   };
 
   const handleSave = async (e) => {
@@ -250,7 +243,6 @@ const AssetReclassify = () => {
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
               <button type="submit" className="primary">Save</button>
-              <button type="button" className="secondary" onClick={handleFillDummy}>Fill Dummy</button>
               <button type="button" className="secondary" onClick={() => setShowForm(false)}>Cancel</button>
             </div>
           </form>
@@ -275,3 +267,4 @@ const AssetReclassify = () => {
 };
 
 export default AssetReclassify;
+
