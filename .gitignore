@@ -6,3 +6,4 @@ plan
 *.svg
 *.puml
 *.docx
+audit*.md
