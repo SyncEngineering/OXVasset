@@ -1,4 +1,4 @@
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 /**
  * Generate and send an xlsx file as HTTP response
